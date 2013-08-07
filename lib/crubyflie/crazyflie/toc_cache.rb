@@ -47,7 +47,7 @@ module Crubyflie
                 return
             else
                 begin
-                    test_f = File.join('folder', 'test')
+                    test_f = File.join(folder, 'test')
                     FileUtils.touch(test_f)
                     FileUtils.rm(test_f)
                 rescue Errno::EACCES

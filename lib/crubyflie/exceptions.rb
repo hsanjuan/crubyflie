@@ -27,4 +27,6 @@ module Crubyflie
     class NoDongleFound < Exception; end
     # Raised when a problem occurs with the USB dongle
     class USBDongleException < Exception; end
+    # Raised when a problem happens in the radio driver communications thread
+    class RadioThreadException < Exception; end
 end

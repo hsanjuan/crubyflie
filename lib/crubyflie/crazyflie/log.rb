@@ -189,7 +189,7 @@ module Crubyflie
             port = Crazyflie::CRTP_PORTS[:logging]
             channel = TOC_CHANNEL
             @crazyflie.send_packet(reset_packet)
-            @toc.fetch_from_crazyflie(@crazyflie, port, channel, @in_queue)
+            @toc.fetch_from_crazyflie(@crazyflie, port, @in_queue)
         end
 
         # Creates a log block with the information from a configuration
@@ -262,13 +262,14 @@ module Crubyflie
             stop_packet_reader_thread()
             @packet_reader_thread = Thread.new do
                 packet = @in_queue.pop() # block here if nothing is up
-
                 # @todo align these two
                 case packet.channel()
-                when CHAN_SETTINGS
+                when LOG_SETTINGS_CHANNEL
                     handle_settings_packet(packet)
-                when CHAN_LOGDATA
+                when LOG_DATA_CHANNEL
                     handle_logdata_packet(packet)
+                else
+                    @in_queue << packet
                 end
 
             end
@@ -313,7 +314,9 @@ module Crubyflie
                 puts "Log block #{block_id} created"
                 # We do not start logging right away do we?
             when CMD_APPEND_BLOCK
+                warn "Received log settings with APPEND_LOG"
             when CMD_DELETE_BLOCK
+                warn "Received log settings with DELETE_LOG"
             when CMD_START_LOGGING
                 if error_st != 0
                     hex_error = error_st.to_s(16)
@@ -323,8 +326,12 @@ module Crubyflie
                 end
             when CMD_STOP_LOGGING
                 # @todo
+                warn "Received log settings with STOP_LOGGING"
             when CMD_RESET_LOGGING
                 # @todo
+                warn "Received log settings with RESET_LOGGING"
+            else
+                warn "Received log settings with #{cmd}. Dont now what to do"
             end
 
         end

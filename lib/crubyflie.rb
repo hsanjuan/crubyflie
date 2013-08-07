@@ -19,7 +19,6 @@
 $: << File.join(File.dirname(__FILE__), 'crubyflie')
 require 'crazyflie'
 require 'version'
-require "crubyflie/version"
 
 # The Crubyflie modules wraps all the Crubyflie code so we don't
 # pollute the namespace.

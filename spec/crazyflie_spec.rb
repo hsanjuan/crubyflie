@@ -21,13 +21,15 @@ require 'crazyflie'
 
 describe Crazyflie do
     before :each do
-        @resource = double("Resource")
-        allow(Commander).to receive(:new).and_return(@resource)
-        allow(Param).to receive(:new).and_return(@resource)
-        allow(Log).to receive(:new).and_return(@resource)
-        allow(Commander).to receive(:new).and_return(@resource)
-        allow(@resource).to receive(:send_setpoint)
-        allow(@resource).to receive(:refresh_toc)
+        @facility = double("Facility")
+        allow(Commander).to receive(:new).and_return(@facility)
+        allow(Param).to receive(:new).and_return(@facility)
+        allow(Log).to receive(:new).and_return(@facility)
+        allow(Commander).to receive(:new).and_return(@facility)
+        allow(@facility).to receive(:send_setpoint)
+        allow(@facility).to receive(:refresh_toc)
+        allow(@facility).to receive(:start_packet_reader_thread)
+        allow(@facility).to receive(:stop_packet_reader_thread)
         @link = double("RadioDriver")
         @uri = 'radio://0/0/1M'
         allow(RadioDriver).to receive(:new).and_return(@link)
@@ -58,41 +60,44 @@ describe Crazyflie do
 
     describe "#open_link" do
         it "should connect to a crazyradio url" do
-            allow(@link).to receive(:receive_packet).and_return(@default_pk)
+            expect(@link).to receive(:receive_packet).and_return(@default_pk)
             m = "Connection initiated to radio://0/0/1M"
             expect(@cf).to receive(:puts).with(m)
             expect(@cf).to receive(:puts).with("Connected!")
             expect(@cf).to receive(:puts).with("TOCs extracted from #{@uri}")
-            allow(@resource).to receive(:refresh_toc)
-            expect(@resource).to receive(:refresh_toc).twice
+            expect(@facility).to receive(:refresh_toc).twice
+            # only log facility gets this
+            expect(@facility).to receive(:start_packet_reader_thread).once
+            expect(@facility).to receive(:stop_packet_reader_thread).once
             @cf.open_link(@uri)
             @cf.close_link()
         end
 
         it "should close the link if something happens" do
-            allow(@link).to receive(:connect).and_raise(Exception)
-            expect(@cf).to receive(:puts).with("Connection failed Exception")
-            expect(@resource).not_to receive(:refresh_toc)
+            expect(@link).to receive(:connect).and_raise(Exception)
+            expect(@cf).to receive(:puts).with("Connection failed: Exception")
+            expect(@facility).not_to receive(:refresh_toc)
             @cf.open_link(@uri)
             @cf.close_link()
         end
     end
 
     describe "#close_link" do
-        it "should close the link and kill the thread" do
-            allow(@resource).to receive(:send_setpoint)
-            expect(@resource).to receive(:send_setpoint)
+        it "should close the link" do
+            expect(@facility).to receive(:send_setpoint)
             expect(@link).to receive(:disconnect)
             m = "Disconnected from radio://0/0/1M"
             expect(@cf).to receive(:puts).with(m)
-            expect_any_instance_of(Thread).to receive(:kill).once
 
             @cf.open_link(@uri)
             @cf.close_link()
+            @cf.crtp_queues.each do |k,q|
+                q.should be_empty
+            end
         end
 
         it "should not break closing a non existing link" do
-            expect(@resource).not_to receive(:send_setpoint)
+            expect(@facility).not_to receive(:send_setpoint)
             expect_any_instance_of(NilClass).not_to receive(:disconnect)
             expect(@cf).not_to receive(:puts)
             expect_any_instance_of(Thread).not_to receive(:kill)
@@ -114,7 +119,7 @@ describe Crazyflie do
             expect(@link).to receive(:send_packet).with(pk).at_least(:twice)
             @cf.open_link(@uri)
             @cf.send_packet(@default_pk, true)
-            sleep 0.2
+            sleep 0.5
             @cf.close_link()
         end
     end
@@ -133,7 +138,7 @@ describe Crazyflie do
             @cf.callbacks[:received_packet][:log2] = proc2
 
             allow_any_instance_of(Thread).to receive(:new).and_return(nil)
-            allow(@link).to receive(:receive_packet).and_return(@default_pk)
+            expect(@link).to receive(:receive_packet).and_return(@default_pk)
             expect(proc).to receive(:call).with(@default_pk).at_least(:once)
             expect(proc2).to receive(:call).with(@default_pk).at_least(:once)
             expect(@cf.crtp_queues[:console]).to receive(:<<).once

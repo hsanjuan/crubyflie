@@ -134,9 +134,10 @@ describe RadioDriver do
         it "should raise error if Crazyradio complains" do
             e = USBDongleException
             expect(@crazyradio).to receive(:send_packet).and_raise(e, "aa")
-            m = "Error communicating with Crazyradio: aa"
+            m = "Error talking to Crazyradio: aa"
             expect(@link_error_cb).to receive(:call).with(m)
             @radiodriver.connect(*@connect_params)
+            sleep 0.1
             @radiodriver.disconnect()
         end
 
@@ -145,6 +146,7 @@ describe RadioDriver do
             m = "Dongle communication error (ack is nil)"
             expect(@link_error_cb).to receive(:call).with(m)
             @radiodriver.connect(*@connect_params)
+            sleep 0.1
             @radiodriver.disconnect()
         end
 
@@ -153,6 +155,7 @@ describe RadioDriver do
             m = "Too many packets lost"
             expect(@link_error_cb).to receive(:call).with(m).once
             @radiodriver.connect(*@connect_params)
+            sleep 0.1
             @radiodriver.disconnect()
         end
 

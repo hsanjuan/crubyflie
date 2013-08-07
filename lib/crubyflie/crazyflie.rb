@@ -49,7 +49,7 @@ module Crubyflie
 
         attr_accessor :callbacks
         attr_reader :cache_folder, :commander, :console, :param, :log
-        attr_reader :crtp_queues
+        attr_reader :crtp_queues, :link
         # Initialize a Crazyflie by registering default received-packet
         # callbacks and intializing Queues for every facility.
         # Packets will be queued for each facility depending on their port
@@ -80,6 +80,8 @@ module Crubyflie
             @console   = Console.new(self)
             @param     = Param.new(self)
             @log       = Log.new(self)
+
+            @link = nil
         end
 
 
@@ -89,17 +91,21 @@ module Crubyflie
             call_cb(:connection_initiated, uri)
             begin
                 @link = RadioDriver.new()
-                @link.connect(uri,
-                              @callbacks[:link][:cb],
-                              @callbacks[:link][:error])
+                link_cbs = {
+                    :link_quality_cb => @callbacks[:link][:quality],
+                    :link_error_cb  => @callbacks[:link][:error]
+                }
 
+                @link.connect(uri, link_cbs)
                 @callbacks[:received_packet][:connected] = Proc.new do |packet|
                     puts "Connected!"
                     @callbacks[:received_packet].delete(:connected)
                 end
                 receive_packet_thread()
-                setup_connection()
+                sleep 0.2 # Allow setup and failures
+                setup_connection() if @link
             rescue Exception
+                #warn $!.backtrace.join("\n")
                 call_cb(:connection_failed, $!.message)
                 close_link()
             end
@@ -109,14 +115,27 @@ module Crubyflie
         # Attemps to disconnect from the crazyflie.
         def close_link
             @commander.send_setpoint(0,0,0,0) if @link
-            sleep 0.2 if @link
-            @link.disconnect() if @link
+            sleep 0.1
+            @link.disconnect(force=true) if @link
             call_cb(:disconnected, @link.uri.to_s) if @link
             @receive_packet_thread.kill() if @receive_packet_thread
             @receive_packet_thread = nil
             @retry_packets_thread.kill() if @retry_packets_thread
             @retry_packets.clear()
+            @crtp_queues.each do |k,q|
+                q.clear()
+            end
             @link = nil
+        end
+
+        # Calls #RadioDriver::scan_interface()
+        # @return [Array] List of radio URIs where a crazyflie was found
+        def scan_interface
+            if @link
+                warn "Cannot scan when link is open. Disconnect first"
+                return []
+            end
+            RadioDriver.new().scan_interface()
         end
 
         # Send a packet
@@ -146,7 +165,12 @@ module Crubyflie
         private :receive_packet
 
         def setup_connection
+            # Logging will send other packets such RESET_LOGGING
+            # We make sure to handle them by running the thread
+            # while we refresh the Log TOC
+            @log.start_packet_reader_thread()
             @log.refresh_toc()
+            @log.stop_packet_reader_thread()
             @param.refresh_toc()
             call_cb(:connection_setup_finished, @link.uri.to_s)
         end
@@ -195,7 +219,7 @@ module Crubyflie
             end
 
             @callbacks[:connection_failed][:log] = Proc.new do |m|
-                puts "Connection failed #{m}"
+                puts "Connection failed: #{m}"
             end
 
             @callbacks[:connection_initiated][:log] = Proc.new  do |uri|

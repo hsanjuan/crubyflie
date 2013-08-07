@@ -147,12 +147,13 @@ module Crubyflie
         end
 
         # Creates a Crazyradio object with the first USB dongle found
+        # @param settings [Hash] Crazyradio settings. @see #DEFAULT_SETTINGS
         # @return [Crazyradio] a Crazyradio
         # @raise [USBDongleException] when no USB dongle is found
-        def self.factory
+        def self.factory(settings={})
             devs = Crazyradio.find_devices()
             raise USBDongleException.new("No dongles found") if devs.empty?()
-            return Crazyradio.new(devs.first)
+            return Crazyradio.new(devs.first, settings)
         end
 
         # List crazyradio dongles

@@ -173,17 +173,19 @@ module Crubyflie
                 if response.channel != TOC_CHANNEL
                     # Requeue
                     in_queue << response
-                    warn "Got a non-TOC packet. Requeueing..."
+                    warn "Got a non-TOC packet on #{response.channel}. Requeueing..."
                     sleep 0.1 # Lets give a chance to other threads
                     next
                 end
                 payload = response.data_repack()[1..-1] # leave byte 0 out
                 toc_elem = @element_class.new(payload)
-                if (a = requested_item) != toc_elem.ident()
-                    warn "#{port}: Expected #{a}, but got #{toc_elem.ident}"
-                    warn "Requeing"
-                    # this way we are ordering items
-                    in_queue << response
+                if (a = requested_item) != (b = toc_elem.ident())
+                    warn "#{port}: Expected #{a}, but got #{b}"
+                    if b > a
+                        warn "Requeing"
+                        # this way we are ordering items
+                        in_queue << response
+                    end
                     next
                 end
 

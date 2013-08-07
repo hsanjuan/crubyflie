@@ -115,14 +115,14 @@ module Crubyflie
         def initialize(crazyflie)
             @crazyflie = crazyflie
             @in_queue = crazyflie.crtp_queues[:param]
-            @toc = TOC.new(@crazyflie.cache_folder, LogTOCElement)
+            @toc = TOC.new(@crazyflie.cache_folder, ParamTOCElement)
         end
 
         # Refreshes the TOC. It only returns when it is finished
         def refresh_toc
             channel = TOC_CHANNEL
             port = Crazyflie::CRTP_PORTS[:param]
-            @toc.fetch_from_crazyflie(@crazyflie, port, channel, @in_queue)
+            @toc.fetch_from_crazyflie(@crazyflie, port, @in_queue)
         end
 
         # Set the value of a paremeter

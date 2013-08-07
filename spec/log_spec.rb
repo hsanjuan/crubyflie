@@ -109,7 +109,6 @@ describe Log do
             expect(@log.toc).to receive(:fetch_from_crazyflie).with(
                                                                     @crazyflie,
                                                                     port,
-                                                                    channel,
                                                                     @queue)
             @log.refresh_toc()
         end

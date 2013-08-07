@@ -47,6 +47,7 @@ module Crubyflie
             @uri = nil
             @in_queue = Queue.new()
             @out_queue = Queue.new()
+            Thread.abort_on_exception = true
             @radio_thread = nil
             @callbacks = {}
             @crazyradio = nil
@@ -78,11 +79,19 @@ module Crubyflie
             @uri = URI(uri_s)
             dongle_number = @uri.host.to_i
             channel, rate = @uri.path.split('/')[1..-1] # remove leading /
+            channel = channel.to_i
             # @todo this should be taken care of in crazyradio
-            # i dont care about rates at this point
-            raise InvalidURIType.new("Bad rate") unless ["250K",
-                                                         "1M",
-                                                         "2M"].include?(rate)
+
+            case rate
+            when "250K"
+                rate = CrazyradioConstants::DR_250KPS
+            when "1M"
+                rate = CrazyradioConstants::DR_1MPS
+            when "2M"
+                rate = CrazyradioConstants::DR_2MPS
+            else
+                raise InvalidURIType.new("Bad radio rate")
+            end
 
             # Fill in the callbacks Hash
             CALLBACKS.each do |cb|
@@ -99,8 +108,11 @@ module Crubyflie
                 OUT_QUEUE_MAX_SIZE
 
             # Initialize Crazyradio and run thread
-            cradio_opts = {}
-            @crazyradio = Crazyradio.new(channel, rate, cradio_opts)
+            cradio_opts = {
+                :channel => channel,
+                :data_rate => rate
+            }
+            @crazyradio = Crazyradio.factory(cradio_opts)
             start_radio_thread()
 
         end
@@ -157,7 +169,7 @@ module Crubyflie
         def scan_interface
             raise OpenLink.new("Cannot scan when link is open") if @crazyradio
             begin
-                @crazyradio = Crazyradio.new()
+                @crazyradio = Crazyradio.factory()
                 results = {}
                 @crazyradio[:arc] = 1
                 @crazyradio[:data_rate] = Crazyradio::DR_250KPS
@@ -177,7 +189,7 @@ module Crubyflie
             rescue USBDongleException
                 return []
             ensure
-                @crazyradio.close()
+                @crazyradio.close() if @crazyradio
                 @crazyradio = nil
             end
         end
@@ -190,22 +202,17 @@ module Crubyflie
 
 
         # Privates
-
-        def start_radio_thread
-            @radio_thread = Thread.new(&thread_body())
-        end
-        private :start_radio_thread
-
         # The body of the communication thread
         # Sends packets and tries to read the ACK
         # @todo it is long and ugly
         # @todo why the heck do we care here if we need to wait? Should the
         # crazyradio do the waiting?
-        def thread_body
-            return Proc.new do
+        def start_radio_thread
+            @radio_thread = Thread.new do |thr|
                 out_data = [0xFF]
                 retries = @retries_before_disconnect
                 should_sleep = 0
+                error = "Unknown"
                 while true do
                     begin
                         ack = @crazyradio.send_packet(out_data)
@@ -214,14 +221,12 @@ module Crubyflie
                         # -nil - bad comm
                         # -AckStatus class
                     rescue Exception
-                        m = "Error communicating with Crazyradio: #{$!.to_s}"
-                        @callbacks[:link_error_cb].call(m)
+                        error = "Error talking to Crazyradio: #{$!.to_s}"
                         break
                     end
 
                     if ack.nil?
-                        m = "Dongle communication error (ack is nil)"
-                        @callbacks[:link_error_cb].call(m)
+                        error = "Dongle communication error (ack is nil)"
                         break
                     end
 
@@ -232,8 +237,7 @@ module Crubyflie
                     if !ack.ack
                         retries -= 1
                         next if retries > 0
-                        m = "Too many packets lost"
-                        @callbacks[:link_error_cb].call(m)
+                        error = "Too many packets lost"
                         break
                     else
                         retries = @retries_before_disconnect
@@ -265,10 +269,18 @@ module Crubyflie
 
                     out_data = out_packet.pack
                 end
+                if !@shutdown_thread
+                    # If we reach here it means we are dying because of
+                    # an error. The callback will likely call disconnect, which
+                    # tries to kills us, but cannot because we are running the
+                    # callback. Therefore we set @radio_thread to nil and then
+                    # run the callback.
+                    @radio_thread = nil
+                    @callbacks[:link_error_cb].call(error)
+                end
             end
         end
-        private :thread_body
-
+        private :start_radio_thread
 
         def kill_radio_thread(force=false)
             if @radio_thread

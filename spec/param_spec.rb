@@ -61,7 +61,6 @@ describe Param do
             expect(@param.toc).to receive(:fetch_from_crazyflie).with(
                                                                     @crazyflie,
                                                                     port,
-                                                                    channel,
                                                                     @queue)
             @param.refresh_toc()
         end
