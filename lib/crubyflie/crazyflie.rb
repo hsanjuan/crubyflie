@@ -35,6 +35,7 @@ module Crubyflie
     # the @crazyflie.commander.set_sendpoint() to send a new setpoint
     # to a Crazyflie
     class Crazyflie
+        include Logging
         include CRTPConstants
 
         # Groups of callbacks available
@@ -98,14 +99,14 @@ module Crubyflie
 
                 @link.connect(uri, link_cbs)
                 @callbacks[:received_packet][:connected] = Proc.new do |packet|
-                    puts "Connected!"
+                    logger.info "Connected!"
                     @callbacks[:received_packet].delete(:connected)
                 end
                 receive_packet_thread()
                 sleep 0.2 # Allow setup and failures
                 setup_connection() if @link
             rescue Exception
-                #warn $!.backtrace.join("\n")
+                #logger.warn $!.backtrace.join("\n")
                 call_cb(:connection_failed, $!.message)
                 close_link()
             end
@@ -132,7 +133,7 @@ module Crubyflie
         # @return [Array] List of radio URIs where a crazyflie was found
         def scan_interface
             if @link
-                warn "Cannot scan when link is open. Disconnect first"
+                logger.error "Cannot scan when link is open. Disconnect first"
                 return []
             end
             RadioDriver.new().scan_interface()
@@ -160,7 +161,7 @@ module Crubyflie
 
             queue = @crtp_queues[facility]
             if queue then queue << packet
-            else warn "No queue for packet on port #{port}" end
+            else logger.warn "No queue for packet on port #{port}" end
         end
         private :receive_packet
 
@@ -209,25 +210,26 @@ module Crubyflie
 
         # Register some callbacks which are default
         def register_default_callbacks
-            @callbacks[:received_packet][:delete_timer] = Proc.new do |packet|
-                sym = "port_#{packet.port}".to_sym
+            @callbacks[:received_packet][:delete_timer] = Proc.new do |pk|
+                sym = "port_#{pk.port}".to_sym
                 @retry_packets.delete(sym)
             end
 
             @callbacks[:disconnected][:log] = Proc.new do |uri|
-                puts "Disconnected from #{uri}"
+                logger.info "Disconnected from #{uri}"
             end
 
             @callbacks[:connection_failed][:log] = Proc.new do |m|
-                puts "Connection failed: #{m}"
+                logger.error "Connection failed: #{m}"
             end
 
             @callbacks[:connection_initiated][:log] = Proc.new  do |uri|
-                puts "Connection initiated to #{uri}"
+                logger.info "Connection initiated to #{uri}"
             end
 
-            @callbacks[:connection_setup_finished][:log] = Proc.new  do |uri|
-                puts "TOCs extracted from #{uri}"
+            @callbacks[:connection_setup_finished][:log] = Proc.new do |uri|
+                logger.debug "TOCs extracted from #{uri}"
+                logger.info "Connection ready!"
             end
 
             @callbacks[:link][:quality] = Proc.new  do |m|
@@ -235,7 +237,7 @@ module Crubyflie
             end
 
             @callbacks[:link][:error] = Proc.new  do |m|
-                warn "Link error: #{m}"
+                logger.error "Link error: #{m}"
                 close_link()
             end
 

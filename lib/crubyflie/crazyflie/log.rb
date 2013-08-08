@@ -167,6 +167,7 @@ module Crubyflie
     # and doing the appropiate. This saves us from registering callbacks
     # in other places and from selecting which data we are to use here.
     class Log
+        include Logging
         include CRTPConstants
 
         attr_reader :log_blocks, :toc
@@ -215,7 +216,7 @@ module Crubyflie
                     packet.data += bin_address.unpack('C*')
                 end
             end
-            puts "Adding block #{block_id}"
+            logger.debug "Adding block #{block_id}"
             @crazyflie.send_packet(packet)
             return block_id
         end
@@ -302,36 +303,39 @@ module Crubyflie
             case cmd
             when CMD_CREATE_BLOCK
                 if !@log_blocks[block_id]
-                    warn "No log entry for #{block_id}"
+                    logger.error "No log entry for #{block_id}"
                     return
                 end
                 if error_st != 0
                     hex_error = error_st.to_s(16)
-                    warn "Error creating block #{block_id}: #{hex_error}"
+                    mesg = "Error creating block #{block_id}: #{hex_error}"
+                    logger.error(mesg)
                     return
                 end
                 # Block was created, let's start logging
-                puts "Log block #{block_id} created"
+                logger.debug "Log block #{block_id} created"
                 # We do not start logging right away do we?
             when CMD_APPEND_BLOCK
-                warn "Received log settings with APPEND_LOG"
+                logger.debug "Received log settings with APPEND_LOG"
             when CMD_DELETE_BLOCK
-                warn "Received log settings with DELETE_LOG"
+                logger.debug "Received log settings with DELETE_LOG"
             when CMD_START_LOGGING
                 if error_st != 0
                     hex_error = error_st.to_s(16)
-                    warn "Error starting to log #{block_id}: #{hex_error}"
+                    mesg = "Error starting to log #{block_id}: #{hex_error}"
+                    logger.error(mesg)
                 else
-                    puts "Logging started for #{block_id}"
+                    logger.debug "Logging started for #{block_id}"
                 end
             when CMD_STOP_LOGGING
                 # @todo
-                warn "Received log settings with STOP_LOGGING"
+                logger.debug "Received log settings with STOP_LOGGING"
             when CMD_RESET_LOGGING
                 # @todo
-                warn "Received log settings with RESET_LOGGING"
+                logger.debug "Received log settings with RESET_LOGGING"
             else
-                warn "Received log settings with #{cmd}. Dont now what to do"
+                mesg = "Received log settings with #{cmd}. Dont now what to do"
+                logger.warn(mesg)
             end
 
         end
@@ -345,7 +349,7 @@ module Crubyflie
             if block
                 block.unpack_log_data(logdata)
             else
-                warn "No entry for logdata for block #{block_id}"
+                logger.error "No entry for logdata for block #{block_id}"
             end
         end
         private :handle_logdata_packet

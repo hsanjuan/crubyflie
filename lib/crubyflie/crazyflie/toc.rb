@@ -40,6 +40,7 @@ module Crubyflie
     # It is a hash that stores a group index.
     # Each group is a Hash indexed by element ID that stores TOC element
     class TOC
+        include Logging
         include CRTPConstants
         attr_reader :toc
         # Initializes the hash
@@ -143,7 +144,7 @@ module Crubyflie
             response = in_queue.pop() # we block here if none :)
             while response.channel != TOC_CHANNEL do
                 in_queue << response
-                warn "Got a non-TOC packet. Requeueing..."
+                logger.debug "Got a non-TOC packet. Requeueing..."
                 sleep 0.1
                 response = in_queue.pop()
             end
@@ -155,15 +156,15 @@ module Crubyflie
             total_toc_items, crc = payload[0..5].unpack('CL<')
             hex_crc = crc.to_s(16)
 
-            puts "TOC crc #{hex_crc}, #{total_toc_items} items"
+            logger.debug "TOC crc #{hex_crc}, #{total_toc_items} items"
             import_from_cache(hex_crc)
 
             if !@toc.nil? # in cache so we can stop here
-                puts "TOC found in cache"
+                logger.debug "TOC found in cache"
                 return
             end
 
-            warn "Not in cache"
+            logger.debug "Not in cache"
             @toc = {}
             # We proceed to request all the TOC elements
             requested_item = 0
@@ -173,16 +174,18 @@ module Crubyflie
                 if response.channel != TOC_CHANNEL
                     # Requeue
                     in_queue << response
-                    warn "Got a non-TOC packet on #{response.channel}. Requeueing..."
+                    mesg =  "Got a non-TOC packet on #{response.channel}."
+                    mesg << " Requeueing..."
+                    logger.debug(mesg)
                     sleep 0.1 # Lets give a chance to other threads
                     next
                 end
                 payload = response.data_repack()[1..-1] # leave byte 0 out
                 toc_elem = @element_class.new(payload)
                 if (a = requested_item) != (b = toc_elem.ident())
-                    warn "#{port}: Expected #{a}, but got #{b}"
+                    logger.debug "#{port}: Expected #{a}, but got #{b}"
                     if b > a
-                        warn "Requeing"
+                        logger.debug "Requeing"
                         # this way we are ordering items
                         in_queue << response
                     end
@@ -190,7 +193,7 @@ module Crubyflie
                 end
 
                 insert(toc_elem)
-                puts "Added #{toc_elem.ident} to TOC"
+                logger.debug("Added #{toc_elem.ident} to TOC")
                 requested_item += 1
             end
             export_to_cache(hex_crc)

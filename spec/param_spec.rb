@@ -45,6 +45,7 @@ describe Param do
         allow(@crazyflie).to receive(:cache_folder).and_return(nil)
 
         @param = Param.new(@crazyflie)
+        @logger = @param.logger
     end
 
     describe "#initialize" do
@@ -68,7 +69,7 @@ describe Param do
 
     describe "#set_value" do
         it "should not do anything if the element is not in the TOC" do
-            expect(@param).to receive(:warn).with("Param abc not in TOC!")
+            expect(@logger).to receive(:error).with("Param abc not in TOC!")
             expect(@crazyflie).not_to receive(:send_packet)
             @param.set_value('abc', 45)
         end
@@ -123,7 +124,7 @@ describe Param do
             @queue << res
 
             m = "Got answer to setting param 'gr.name' with '1'"
-            expect(@param).to receive(:puts).with(m)
+            expect(@logger).to receive(:debug).with(m)
             @param.set_value('gr.name', 1)
         end
     end
@@ -131,7 +132,7 @@ describe Param do
     describe "#get_value" do
         it "should not do anything if the element is not in the TOC" do
             m = "Cannot update gr.name, not in TOC"
-            expect(@param).to receive(:warn).with(m)
+            expect(@logger).to receive(:error).with(m)
 
             @param.get_value('gr.name') {}
         end

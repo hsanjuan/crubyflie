@@ -51,7 +51,8 @@ describe TOC do
                                     :ctype => 4,
                                     :rtype => 5,
                                     :access => 6
-                                })
+                                  })
+        @logger = @toc.logger
     end
 
     describe "#initialize" do
@@ -125,9 +126,9 @@ describe TOC do
             m = "Got a non-TOC packet. Requeueing..."
             m2 = "TOC crc #{1}, 5 items"
             m3 = "TOC found in cache"
-            expect(@toc).to receive(:warn).with(m)
-            expect(@toc).to receive(:puts).with(m2)
-            expect(@toc).to receive(:puts).with(m3)
+            expect(@logger).to receive(:debug).with(m)
+            expect(@logger).to receive(:debug).with(m2)
+            expect(@logger).to receive(:debug).with(m3)
 
             @toc.fetch_from_crazyflie(cf, 0, queue)
         end
@@ -159,13 +160,13 @@ describe TOC do
             m3 = "Added 3 to TOC"
             m4 = "Added 4 to TOC"
 
-            expect(@toc).to receive(:warn).with(mw)
-            expect(@toc).to receive(:puts).with(m)
-            expect(@toc).to receive(:puts).with(m0)
-            expect(@toc).to receive(:puts).with(m1)
-            expect(@toc).to receive(:puts).with(m2)
-            expect(@toc).to receive(:puts).with(m3)
-            expect(@toc).to receive(:puts).with(m4)
+            expect(@logger).to receive(:debug).with(mw)
+            expect(@logger).to receive(:debug).with(m)
+            expect(@logger).to receive(:debug).with(m0)
+            expect(@logger).to receive(:debug).with(m1)
+            expect(@logger).to receive(:debug).with(m2)
+            expect(@logger).to receive(:debug).with(m3)
+            expect(@logger).to receive(:debug).with(m4)
 
             one = { :ident => 0 }
             two = { :ident => 1 }

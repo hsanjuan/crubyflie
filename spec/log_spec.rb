@@ -92,6 +92,7 @@ describe Log do
         allow(@crazyflie).to receive(:cache_folder).and_return(nil)
 
         @log = Log.new(@crazyflie)
+        @logger = @log.logger
     end
 
     describe "#initialize" do
@@ -140,7 +141,7 @@ describe Log do
             expect(log_conf).to receive(:data_callback).and_return(cb).once
             expect(log_conf).to receive(:period).and_return(200).once
             # It is the 5th call to logblock.new in these specs
-            expect(@log).to receive(:puts).with("Adding block 5")
+            expect(@logger).to receive(:debug).with("Adding block 5")
 
             packet = CRTPPacket.new()
             packet.modify_header(nil, CRTP_PORTS[:logging],
@@ -222,14 +223,14 @@ describe Log do
             packet = CRTPPacket.new()
             packet.data = [CMD_CREATE_BLOCK, 33, 0]
             expect(@log).not_to receive(:puts)
-            expect(@log).to receive(:warn).with("No log entry for 33")
+            expect(@logger).to receive(:error).with("No log entry for 33")
             @log.send(:handle_settings_packet, packet)
         end
 
         it "should go to CMD_CREATE_BLOCK case with error" do
             packet = CRTPPacket.new()
             packet.data = [CMD_CREATE_BLOCK, 33, 3]
-            expect(@log).to receive(:warn).with("Error creating block 33: 3")
+            expect(@logger).to receive(:error).with("Error creating block 33: 3")
             expect(@log.log_blocks).to receive(:[]).with(33).and_return({})
             @log.send(:handle_settings_packet, packet)
         end
@@ -237,14 +238,14 @@ describe Log do
         it "should go to CMD_START_LOGGING case without error" do
             packet = CRTPPacket.new()
             packet.data = [CMD_START_LOGGING, 33, 0]
-            expect(@log).to receive(:puts).with("Logging started for 33")
+            expect(@logger).to receive(:debug).with("Logging started for 33")
             @log.send(:handle_settings_packet, packet)
         end
 
         it "should go to CMD_START_LOGGING case with error" do
             packet = CRTPPacket.new()
             packet.data = [CMD_START_LOGGING, 33, 3]
-            expect(@log).to receive(:warn).with("Error starting to log 33: 3")
+            expect(@logger).to receive(:error).with("Error starting to log 33: 3")
             @log.send(:handle_settings_packet, packet)
         end
     end
@@ -253,7 +254,7 @@ describe Log do
         it "should warn if no block exist" do
             expect(@log.log_blocks).to receive(:[]).with(33).and_return(nil)
             m = "No entry for logdata for block 33"
-            expect(@log).to receive(:warn).with(m)
+            expect(@logger).to receive(:error).with(m)
             packet = CRTPPacket.new()
             packet.data = [33, 44, 45, 46]
             @log.send(:handle_logdata_packet, packet)
@@ -263,7 +264,7 @@ describe Log do
             block =  double("Block")
             expect(block).to receive(:unpack_log_data).with([46,47].pack('C*'))
             expect(@log.log_blocks).to receive(:[]).with(33).and_return(block)
-            expect(@log).not_to receive(:warn)
+            expect(@logger).not_to receive(:error)
             packet = CRTPPacket.new()
             packet.data = [33, 44, 45, 46, 46, 47]
             @log.send(:handle_logdata_packet, packet)

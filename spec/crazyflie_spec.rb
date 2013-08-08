@@ -20,6 +20,8 @@ require 'crazyflie'
 
 
 describe Crazyflie do
+    before :all do
+    end
     before :each do
         @facility = double("Facility")
         allow(Commander).to receive(:new).and_return(@facility)
@@ -37,9 +39,11 @@ describe Crazyflie do
         allow(@link).to receive(:disconnect)
         allow(@link).to receive(:receive_packet)
         allow(@link).to receive(:uri).and_return(URI(@uri))
+
+        #allow_any_instance_of(CrubyflieLogger).to receive(:info)
+
         @cf = Crazyflie.new()
-        allow(@cf).to receive(:puts)
-        allow(@cf).to receive(:warn)
+        @logger = @cf.logger
 
         @default_pk = CRTPPacket.new(0b00001100, [1,2,3])
     end
@@ -62,10 +66,16 @@ describe Crazyflie do
         it "should connect to a crazyradio url" do
             expect(@link).to receive(:receive_packet).and_return(@default_pk)
             m = "Connection initiated to radio://0/0/1M"
-            expect(@cf).to receive(:puts).with(m)
-            expect(@cf).to receive(:puts).with("Connected!")
-            expect(@cf).to receive(:puts).with("TOCs extracted from #{@uri}")
-            expect(@facility).to receive(:refresh_toc).twice
+            m2 = "Disconnected from radio://0/0/1M"
+            m3 = "TOCs extracted from #{@uri}"
+            expect(@logger).to receive(:info).with(m)
+            expect(@logger).to receive(:info).with("Connected!")
+            expect(@logger).to receive(:info).with("Connection ready!")
+            expect(@logger).to receive(:info).with(m2)
+            expect(@logger).to receive(:debug).with(m3)
+
+
+          expect(@facility).to receive(:refresh_toc).twice
             # only log facility gets this
             expect(@facility).to receive(:start_packet_reader_thread).once
             expect(@facility).to receive(:stop_packet_reader_thread).once
@@ -75,7 +85,9 @@ describe Crazyflie do
 
         it "should close the link if something happens" do
             expect(@link).to receive(:connect).and_raise(Exception)
-            expect(@cf).to receive(:puts).with("Connection failed: Exception")
+            mesg = "Connection failed: Exception"
+            expect(@logger).to receive(:info).at_least(:once)
+            expect(@logger).to receive(:error).with(mesg)
             expect(@facility).not_to receive(:refresh_toc)
             @cf.open_link(@uri)
             @cf.close_link()
@@ -86,8 +98,12 @@ describe Crazyflie do
         it "should close the link" do
             expect(@facility).to receive(:send_setpoint)
             expect(@link).to receive(:disconnect)
-            m = "Disconnected from radio://0/0/1M"
-            expect(@cf).to receive(:puts).with(m)
+            m1 = "Connection initiated to radio://0/0/1M"
+            m2 = "Connection ready!"
+            m3 = "Disconnected from radio://0/0/1M"
+            expect(@logger).to receive(:info).with(m1)
+            expect(@logger).to receive(:info).with(m2)
+            expect(@logger).to receive(:info).with(m3)
 
             @cf.open_link(@uri)
             @cf.close_link()
@@ -109,6 +125,7 @@ describe Crazyflie do
         it "should send a packet without expecting answer" do
             expect(@cf).not_to receive(:setup_retry)
             expect(@link).to receive(:send_packet).with(@default_pk)
+            expect(@logger).to receive(:info).at_least(:once)
             @cf.open_link(@uri)
             @cf.send_packet(@default_pk)
             @cf.close_link()
@@ -117,6 +134,7 @@ describe Crazyflie do
         it "should send a packet and set up a timer when expecting answer" do
             pk = @default_pk
             expect(@link).to receive(:send_packet).with(pk).at_least(:twice)
+            expect(@logger).to receive(:info).at_least(:once)
             @cf.open_link(@uri)
             @cf.send_packet(@default_pk, true)
             sleep 0.5
@@ -142,6 +160,7 @@ describe Crazyflie do
             expect(proc).to receive(:call).with(@default_pk).at_least(:once)
             expect(proc2).to receive(:call).with(@default_pk).at_least(:once)
             expect(@cf.crtp_queues[:console]).to receive(:<<).once
+            expect(@logger).to receive(:info).at_least(:once)
             @cf.open_link(@uri)
             @cf.send(:receive_packet)
             # Received packet comes on port 0 - console

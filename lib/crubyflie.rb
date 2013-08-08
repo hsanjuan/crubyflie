@@ -17,11 +17,13 @@
 # along with Crubyflie.  If not, see <http://www.gnu.org/licenses/>
 
 $: << File.join(File.dirname(__FILE__), 'crubyflie')
+
+require 'crubyflie_logger'
 require 'crazyflie'
 require 'version'
 
 # The Crubyflie modules wraps all the Crubyflie code so we don't
 # pollute the namespace.
 module Crubyflie
-
+    include Logging
 end

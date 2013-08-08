@@ -107,8 +107,9 @@ module Crubyflie
     # The parameter facility. Used to retrieve the table of contents,
     # set the value of a parameter and read the value of a parameter
     class Param
-
+        include Logging
         include CRTPConstants
+
         attr_reader :toc
         # Initialize the parameter facility
         # @param crazyflie [Crazyflie]
@@ -134,7 +135,7 @@ module Crubyflie
         def set_value(name, value, &block)
             element = @toc[name]
             if element.nil?
-                warn "Param #{name} not in TOC!"
+                logger.error "Param #{name} not in TOC!"
                 return
             end
 
@@ -151,7 +152,8 @@ module Crubyflie
             if block_given?
                 yield response
             else
-                puts "Got answer to setting param '#{name}' with '#{value}'"
+                mesg = "Got answer to setting param '#{name}' with '#{value}'"
+                logger.debug(mesg)
             end
         end
 
@@ -161,7 +163,7 @@ module Crubyflie
         def get_value(name, &block)
             element = @toc[name]
             if element.nil?
-                warn "Cannot update #{name}, not in TOC"
+                logger.error "Cannot update #{name}, not in TOC"
                 return
             end
             packet = CRTPPacket.new()
@@ -173,9 +175,9 @@ module Crubyflie
 
             ident = response.data()[0]
             if ident != element.ident()
-                m = "Value expected for element with ID #{element.ident}"
-                m << " but got for element with ID #{ident}"
-                warn m
+                mesg = "Value expected for element with ID #{element.ident}"
+                mesg << " but got for element with ID #{ident}"
+                logger.error(mesg)
                 return
             end
             value = response.data_repack()[1..-1]
