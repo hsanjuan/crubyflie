@@ -144,7 +144,12 @@ module Crubyflie
                 logger.error "Cannot scan when link is open. Disconnect first"
                 return []
             end
-            RadioDriver.new().scan_interface()
+            begin
+                RadioDriver.new().scan_interface()
+            rescue Exception
+                logger.error("Cannot scan interfaces: #{$!}")
+                return []
+            end
         end
 
         # Send a packet

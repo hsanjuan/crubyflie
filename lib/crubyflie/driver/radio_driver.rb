@@ -188,7 +188,7 @@ module Crubyflie
                 end
                 return uris
             rescue USBDongleException
-                return []
+                raise
             rescue Exception
                 retries ||= 0
                 logger.error("Unknown error scanning interface: #{$!}")

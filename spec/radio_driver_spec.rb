@@ -32,6 +32,7 @@ describe RadioDriver do
         @ack = RadioAck.new(true, true, 3, [1,2,3])
         allow(@crazyradio).to receive(:send_packet).and_return(@ack)
         allow(Crazyradio).to receive(:new).and_return(@crazyradio)
+        allow(Crazyradio).to receive(:factory).and_return(@crazyradio)
 
     end
 
@@ -207,11 +208,13 @@ describe RadioDriver do
                                                      'radio://0/4/2M']
         end
 
-        it "should return an empty list if a usb dongle exception happens" do
+        it "should raise a usb dongle exception it it happens" do
             e = USBDongleException
             allow(@crazyradio).to receive(:scan_channels).and_raise(e)
             allow(@crazyradio).to receive(:[]=)
-            @radiodriver.scan_interface().should == []
+            expect {
+                @radiodriver.scan_interface()
+            }.to raise_exception(e)
         end
     end
 

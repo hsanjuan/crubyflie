@@ -8,6 +8,7 @@ include Crubyflie # easy to use things in namespace
 cf = Crazyflie.new('cache')
 # Before opening any link, scan for interfaces
 ifaces = cf.scan_interface
+exit 1 if ifaces.empty?
 logger.info("Found interfaces: #{ifaces}")
 
 # Open a link to the first interface
