@@ -24,7 +24,7 @@ end
 class CrubyflieLogger
     # Initialize a logger and enable debug logs
     # @param debug [TrueClass,nil] enable output of debug messages
-    def initialize(debug=nil)
+    def initialize(debug=$debug)
         @@debug = debug
     end
 

@@ -25,5 +25,6 @@ require 'version'
 # The Crubyflie modules wraps all the Crubyflie code so we don't
 # pollute the namespace.
 module Crubyflie
+    $debug = false
     include Logging
 end

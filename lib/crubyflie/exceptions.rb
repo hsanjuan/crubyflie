@@ -29,4 +29,6 @@ module Crubyflie
     class USBDongleException < Exception; end
     # Raised when a problem happens in the radio driver communications thread
     class RadioThreadException < Exception; end
+    # Expected a package but it took to long to get it
+    class WaitTimeoutException < Exception; end
 end

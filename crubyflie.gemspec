@@ -14,7 +14,7 @@ crazyflie using the USB radio dongle.
 EOF
     spec.summary       = "Crazyflie ruby client"
     spec.homepage      = ""
-    spec.license       = "MIT"
+    spec.license       = "GPLv3"
 
     spec.files         = `git ls-files`.split($/)
     spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }

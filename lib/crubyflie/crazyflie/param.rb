@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Crubyflie.  If not, see <http://www.gnu.org/licenses/>
 
+require 'timeout'
+
 module Crubyflie
     # An element in the Parameters Table of Contents
     class ParamTOCElement < TOCElement
@@ -98,6 +100,7 @@ module Crubyflie
                       :group => group,
                       :name  => name,
                       :ctype => ctype,
+                      :type_id => ctype_id,
                       :directive => directive,
                       :access => access
                   })
@@ -147,7 +150,8 @@ module Crubyflie
             packet.data += [value].pack(element.directive()).unpack('C*')
             @crazyflie.send_packet(packet, true) # expect answer
 
-            response = @in_queue.pop() # This should block here as needed
+            response = wait_for_response()
+            return if response.nil?
 
             if block_given?
                 yield response
@@ -171,19 +175,38 @@ module Crubyflie
                                  PARAM_READ_CHANNEL)
             packet.data = [element.ident]
             @crazyflie.send_packet(packet, true)
-            response = @in_queue.pop()
 
-            ident = response.data()[0]
-            if ident != element.ident()
-                mesg = "Value expected for element with ID #{element.ident}"
-                mesg << " but got for element with ID #{ident}"
-                logger.error(mesg)
-                return
-            end
+            # Pop packages until mine comes up
+            begin
+                response = wait_for_response()
+                return if response.nil?
+
+                ident = response.data()[0]
+                if ident != element.ident()
+                    mesg = "Value expected for element with ID #{element.ident}"
+                    mesg << " but got for element with ID #{ident}. Requeing"
+                    logger.debug(mesg)
+                end
+            end until ident == element.ident()
+
             value = response.data_repack()[1..-1]
             value = value.unpack(element.directive).first
             yield(value)
         end
         alias_method :request_param_update, :get_value
+
+        def wait_for_response
+            begin
+                wait = WAIT_PACKET_TIMEOUT
+                response = timeout(wait, WaitTimeoutException) do
+                    @in_queue.pop()
+                end
+                return response
+            rescue WaitTimeoutException
+                logger.error("Param: waited too long to get response")
+                return nil
+            end
+        end
+        private :wait_for_response
     end
 end

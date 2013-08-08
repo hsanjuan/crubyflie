@@ -96,13 +96,20 @@ module Crubyflie
             end
 
             @device = device
+            reopen()
+            @settings = DEFAULT_SETTINGS
+            @settings.update(settings)
+            apply_settings()
+        end
+
+        # Initializes the device and the USB handle
+        # If they are open, it releases the resources first
+        def reopen
+            close()
             @handle = @device.open()
             # USB configuration 0 means unconfigured state
             @handle.configuration = 1 # hardcoded
             @handle.claim_interface(0) # hardcoded
-            @settings = DEFAULT_SETTINGS
-            @settings.update(settings)
-            apply_settings()
         end
 
         # Return some information as string
@@ -119,8 +126,9 @@ module Crubyflie
         def close
             @handle.release_interface(0) if @handle
             @handle.reset_device() if @handle
-            @handle.close() if @handle
-            @device = nil
+            # WARNING: This hangs badly and randomly!!!
+            # @handle.close() if @handle
+            @handle = nil
         end
 
         # Determines if the dongle has hardware scanning.
@@ -173,7 +181,7 @@ module Crubyflie
             @handle.bulk_transfer(out_args)
             in_args = {
                 :endpoint => 0x81,
-                :dataIn => 64,
+                :dataIn => 64
             }
             response = @handle.bulk_transfer(in_args)
 

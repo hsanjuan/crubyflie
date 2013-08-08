@@ -75,10 +75,10 @@ describe Crazyflie do
             expect(@logger).to receive(:debug).with(m3)
 
 
-          expect(@facility).to receive(:refresh_toc).twice
+            expect(@facility).to receive(:refresh_toc).twice
             # only log facility gets this
             expect(@facility).to receive(:start_packet_reader_thread).once
-            expect(@facility).to receive(:stop_packet_reader_thread).once
+            expect(@facility).to receive(:stop_packet_reader_thread).twice
             @cf.open_link(@uri)
             @cf.close_link()
         end
@@ -101,6 +101,7 @@ describe Crazyflie do
             m1 = "Connection initiated to radio://0/0/1M"
             m2 = "Connection ready!"
             m3 = "Disconnected from radio://0/0/1M"
+            expect(@logger).to receive(:debug)
             expect(@logger).to receive(:info).with(m1)
             expect(@logger).to receive(:info).with(m2)
             expect(@logger).to receive(:info).with(m3)
@@ -117,6 +118,7 @@ describe Crazyflie do
             expect_any_instance_of(NilClass).not_to receive(:disconnect)
             expect(@cf).not_to receive(:puts)
             expect_any_instance_of(Thread).not_to receive(:kill)
+            expect(@logger).to receive(:info).with("Disconnected from nowhere")
             @cf.close_link()
         end
     end
@@ -126,6 +128,7 @@ describe Crazyflie do
             expect(@cf).not_to receive(:setup_retry)
             expect(@link).to receive(:send_packet).with(@default_pk)
             expect(@logger).to receive(:info).at_least(:once)
+            expect(@logger).to receive(:debug)
             @cf.open_link(@uri)
             @cf.send_packet(@default_pk)
             @cf.close_link()
@@ -135,6 +138,7 @@ describe Crazyflie do
             pk = @default_pk
             expect(@link).to receive(:send_packet).with(pk).at_least(:twice)
             expect(@logger).to receive(:info).at_least(:once)
+            expect(@logger).to receive(:debug)
             @cf.open_link(@uri)
             @cf.send_packet(@default_pk, true)
             sleep 0.5
@@ -161,6 +165,7 @@ describe Crazyflie do
             expect(proc2).to receive(:call).with(@default_pk).at_least(:once)
             expect(@cf.crtp_queues[:console]).to receive(:<<).once
             expect(@logger).to receive(:info).at_least(:once)
+            expect(@logger).to receive(:debug)
             @cf.open_link(@uri)
             @cf.send(:receive_packet)
             # Received packet comes on port 0 - console

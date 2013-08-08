@@ -89,6 +89,7 @@ module Crubyflie
                       :group => group,
                       :name  => name,
                       :ctype => ctype,
+                      :type_id => ctype_id,
                       :directive => directive,
                       :access => access
                   })
@@ -114,14 +115,13 @@ module Crubyflie
         # @param data_callback [Proc] a callback that receives a hash of
         #                             unpacked data related to this block
         # @param opts [Hash] current options:
-        #                    :period, no idea what unit this is. @todo
+        #                    :period, in centiseconds (100 = 1s)
         def initialize(variables, data_callback=nil, opts={})
             @variables = variables || []
             @ident = @@block_id_counter
             @@block_id_counter += 1
 
             @period = opts.delete(:period) || 10
-            @period /= 10
 
             @data_callback = data_callback
         end
@@ -198,6 +198,7 @@ module Crubyflie
         # @param log_conf [LogConf] Configuration for this block
         # @return [Integer] block ID if things went well,
         def create_log_block(log_conf)
+            start_packet_reader_thread() if !@packet_reader_thread
             block = LogBlock.new(log_conf.variables,
                                  log_conf.data_callback,
                                  {:period => log_conf.period})
@@ -230,8 +231,11 @@ module Crubyflie
         def start_logging(block_id)
             block = @log_blocks[block_id]
             return if !block
+            start_packet_reader_thread() if !@packet_reader_thread
             packet = packet_factory()
-            packet.data = [CMD_START_LOGGING, block_id, block.period]
+            period = block.period
+            packet.data = [CMD_START_LOGGING, block_id, period]
+            logger.debug("Start logging on #{block_id} every #{period*10} ms")
             @crazyflie.send_packet(packet)
         end
 
@@ -243,6 +247,7 @@ module Crubyflie
             return if !block
             packet = packet_factory()
             packet.data = [CMD_STOP_LOGGING, block_id]
+            logger.debug("Stop logging on #{block_id}")
             @crazyflie.send_packet(packet)
         end
 
@@ -262,17 +267,23 @@ module Crubyflie
         def start_packet_reader_thread
             stop_packet_reader_thread()
             @packet_reader_thread = Thread.new do
-                packet = @in_queue.pop() # block here if nothing is up
-                # @todo align these two
-                case packet.channel()
-                when LOG_SETTINGS_CHANNEL
-                    handle_settings_packet(packet)
-                when LOG_DATA_CHANNEL
-                    handle_logdata_packet(packet)
-                else
-                    @in_queue << packet
+                loop do
+                    packet = @in_queue.pop() # block here if nothing is up
+                    # @todo align these two
+                    case packet.channel()
+                    when LOG_SETTINGS_CHANNEL
+                        handle_settings_packet(packet)
+                    when LOG_DATA_CHANNEL
+                        handle_logdata_packet(packet)
+                    when TOC_CHANNEL
+                        # We are refreshing TOC probably
+                        @in_queue << packet
+                        sleep 0.2
+                    else
+                        logger.debug("Log on #{packet.channel}. Cannot handle")
+                        # @in_queue << packet
+                    end
                 end
-
             end
         end
 
@@ -343,6 +354,7 @@ module Crubyflie
 
         def handle_logdata_packet(packet)
             block_id = packet.data[0]
+            #logger.debug("Handling log data for block #{block_id}")
             #timestamp = packet.data[1..3] . pack and re unpack as 4 bytes
             logdata = packet.data_repack()[4..-1]
             block = @log_blocks[block_id]

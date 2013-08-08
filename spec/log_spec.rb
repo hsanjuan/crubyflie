@@ -42,12 +42,6 @@ describe LogBlock do
             b3 = LogBlock.new([]) # 2
             b3.ident.should == 2
         end
-
-        it "should set the period to 1/10th" do
-            cb = Proc.new{}
-            b1 = LogBlock.new([], cb, {:period => 300})
-            b1.period.should == 30
-        end
     end
 
     describe "#unpack_log_data" do
@@ -57,22 +51,16 @@ describe LogBlock do
                 result = r
             end
 
-            var1 = LogConfVariable.new()
-            expect(var1).to receive(:fetch_as).and_return(1).once
-            expect(var1).to receive(:name).and_return('var1').once
-            var2 = LogConfVariable.new()
-            expect(var2).to receive(:fetch_as).and_return(2).once
-            expect(var2).to receive(:name).and_return('var2').once
-            var3 = LogConfVariable.new()
-            expect(var3).to receive(:fetch_as).and_return(3).once
-            expect(var3).to receive(:name).and_return('var3').once
+            var1 = LogConfVariable.new("var1", true, 0, 1)
+            var2 = LogConfVariable.new("var2", true, 0, 2)
+            var3 = LogConfVariable.new("var3", true, 0, 3)
 
             variables = [var1, var2, var3]
 
             # 1 uint8, 1 uint16 and 1 uint32
             data = [255].pack('C') + [65535].pack('S<') + [16777215].pack('L<')
 
-            b = LogBlock.new(variables, cb)
+            b = LogBlock.new(variables, cb) #3
             b.unpack_log_data(data)
             result.should == {
                 'var1' => 255,
@@ -121,33 +109,25 @@ describe Log do
             cb = Proc.new {}
 
 
-            var1 = LogConfVariable.new()
-            expect(var1).to receive(:stored_fetch_as).and_return(1).once
-            expect(var1).to receive(:is_toc_variable?).and_return(true).once
-            expect(var1).not_to receive(:address)
-            expect(var1).to receive(:name).and_return('var1').once
-            var2 = LogConfVariable.new()
-            expect(var2).to receive(:stored_fetch_as).and_return(2).once
-            expect(var2).to receive(:is_toc_variable?).and_return(false).once
-            expect(var2).to receive(:address).and_return(2)
+            var1 = LogConfVariable.new("var1", true, 0, 1)
+
+            var2 = LogConfVariable.new("var2", false, 0, 2, 2)
             expect(var2).not_to receive(:name)
-            var3 = LogConfVariable.new()
-            expect(var3).to receive(:stored_fetch_as).and_return(3).once
-            expect(var3).to receive(:is_toc_variable?).and_return(true).once
+
+            var3 = LogConfVariable.new("var3", true, 0, 3)
             expect(var3).not_to receive(:address)
-            expect(var3).to receive(:name).and_return('var3').once
+
             variables = [var1, var2, var3]
-            expect(log_conf).to receive(:variables).and_return(variables).twice
-            expect(log_conf).to receive(:data_callback).and_return(cb).once
-            expect(log_conf).to receive(:period).and_return(200).once
-            # It is the 5th call to logblock.new in these specs
-            expect(@logger).to receive(:debug).with("Adding block 5")
+            log_conf = LogConf.new(variables, cb, {:period => 200})
+
+            # It is the 4th call to logblock.new in these specs
+            expect(@logger).to receive(:debug).with("Adding block 4")
 
             packet = CRTPPacket.new()
             packet.modify_header(nil, CRTP_PORTS[:logging],
                                  LOG_SETTINGS_CHANNEL)
 
-            packet.data = [Log::CMD_CREATE_BLOCK] + [5] +
+            packet.data = [Log::CMD_CREATE_BLOCK] + [4] +
                 [1] + [1] + [2] + [2,0,0,0] + [3] + [32]
 
             toc1 = TOCElement.new({:ident => 1})
@@ -159,7 +139,7 @@ describe Log do
                 packet.header.should == pk.header
                 packet.data.should == pk.data
             end
-            @log.create_log_block(log_conf).should == 5
+            @log.create_log_block(log_conf).should == 4
         end
     end
 
@@ -168,6 +148,7 @@ describe Log do
             block = double("block")
             expect(block).to receive(:period).and_return(30)
             expect(@log.log_blocks).to receive(:[]).with(5).and_return(block)
+            expect(@logger).to receive(:debug)
             expect(@crazyflie).to receive(:send_packet) do |pk|
                 pk.data.should == [CMD_START_LOGGING, 5, 30]
             end
@@ -179,6 +160,7 @@ describe Log do
         it "should send the stop logging packet" do
             block = double("block")
             expect(@log.log_blocks).to receive(:[]).with(5).and_return(block)
+            expect(@logger).to receive(:debug)
             expect(@crazyflie).to receive(:send_packet) do |pk|
                 pk.data.should == [CMD_STOP_LOGGING, 5]
             end
@@ -210,9 +192,11 @@ describe Log do
             packet = CRTPPacket.new()
             packet.modify_header(nil, nil, 3)
             packet.channel.should == 3 # We dont process this one
-            expect(@queue).to receive(:pop).and_return(packet)
+            do_this = receive(:pop).and_return(packet).at_least(:once)
+            expect(@queue).to do_this
+            expect(@logger).to receive(:debug).at_least(:once)
             @log.start_packet_reader_thread
-            sleep 0.2
+            sleep 0.1
             @log.stop_packet_reader_thread
         end
     end

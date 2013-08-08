@@ -115,7 +115,8 @@ describe RadioDriver do
             @radiodriver.connect(*@connect_params)
             max = @radiodriver.out_queue_max_size
             m = "Reached #{max} elements in outgoing queue"
-            expect(@link_error_cb).to receive(:call).with(m).twice
+            # When it reaches 50 it disconnects and not send anymore
+            expect(@link_error_cb).to receive(:call).with(m).once
             (1..52).each do
                 @radiodriver.send_packet([4,5,6])
             end
@@ -160,7 +161,7 @@ describe RadioDriver do
         end
 
         it "should receive a packet" do
-            expect(@link_quality_cb).to receive(:call).with(3).at_least(:once)
+            expect(@link_quality_cb).to receive(:call).with(70).at_least(:once)
             @radiodriver.connect(*@connect_params)
             @radiodriver.send_packet(CRTPPacket.unpack([1,2,3]))
             packet = @radiodriver.receive_packet(false)

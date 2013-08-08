@@ -32,6 +32,10 @@ module Crubyflie
             :all => 0xFF
         }
 
+        # How many seconds until we give up waiting for a packet to
+        # appear in a queue
+        WAIT_PACKET_TIMEOUT = 2
+
         # TOC channel
         TOC_CHANNEL = 0
 

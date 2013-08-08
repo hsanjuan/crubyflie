@@ -19,31 +19,39 @@
 module Crubyflie
 
     # Interface for Logging configuration objects
-    # this class lists methods to be implemented
     class LogConf
-        # returns the variables that are logged in this logging
-        # configuration
-        # @return [Array[LogConfVariable]] list of variables
-        def variables ; end
+        attr_reader :variables, :data_callback, :period
+        def initialize(variables, data_callback, opts={})
+            @variables = variables
+            @data_callback = data_callback
+            @period = opts[:period] || 20
+        end
     end
 
     # Interface for Logging variable configuration objects
     # this class lists methods to be implemented
     # Python implementation is in cfclient/utils/logconfigreader.py
     class LogConfVariable
-        # @return [String] name of this variable
-        def name ; end
+
+        attr_reader :name, :stored_as, :fetch_as, :address
+
+        def initialize(name, is_toc, stored_as, fetch_as, address=0)
+            @name = name
+            @is_toc = is_toc
+            @stored_as = stored_as
+            @fetch_as = fetch_as
+            @address = address
+        end
         # @return [Integer] a byte where the upper 4 bits are the
         # type indentifier of how the variable is stored and the lower
         # 4 bits are the type the variable should be fetched as
-        def stored_fetch_as ; end
-        # @return [Integer] the code indentifying the type used to store the
-        #                   variable
-        def stored_as; end
-        # @return [Integer] the code indentifying the type used to fetch the
-        #                   variable
-        def fetch_as ; end
+        def stored_fetch_as
+            return @stored_as << 4 | (0x0F & @fetch_as)
+        end
+
         # @return [TrueClass,FalseClass] true if it is stored in the TOC
-        def is_toc_variable? ; end
+        def is_toc_variable?
+            return @is_toc == true
+        end
     end
 end

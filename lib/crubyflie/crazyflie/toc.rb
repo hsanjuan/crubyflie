@@ -25,12 +25,13 @@ module Crubyflie
         # Initializes a TOC element
         # @param element_h [Hash] indicates :ident, :group, :name, :ctype,
         #                         :rtype, :access
-        attr_reader :ident, :group, :name, :ctype, :directive, :access
+        attr_reader :ident, :group, :name, :ctype, :type_id, :directive, :access
         def initialize(element_h)
             @ident = element_h.delete(:ident) || 0
             @group  = element_h.delete(:group) || ""
             @name  = element_h.delete(:name) || ""
             @ctype = element_h.delete(:ctype) || ""
+            @type_id = element_h.delete(:type_id) || -1
             @directive = element_h.delete(:directive) || ""
             @access = element_h.delete(:access) || 0
         end
@@ -115,6 +116,19 @@ module Crubyflie
         # Retrieves this TOC from the cache
         def import_from_cache(crc)
             @toc = @cache.fetch(crc)
+        end
+
+        # Produce a simple string representation of the TOC
+        # @return [String] a pretty string
+        def to_s
+            s = ""
+            @toc.each do |group,v|
+                s << "- #{group}\n"
+                v.each do |name, elem|
+                    s << "    * #{name} (#{elem.ctype}/##{elem.type_id})\n"
+                end
+            end
+            return s
         end
 
         # Fetches a TOC from crazyflie in a synchronous way

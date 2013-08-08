@@ -103,7 +103,7 @@ module Crubyflie
                     @callbacks[:received_packet].delete(:connected)
                 end
                 receive_packet_thread()
-                sleep 0.2 # Allow setup and failures
+                sleep 0.5 # Allow setup and failures
                 setup_connection() if @link
             rescue Exception
                 #logger.warn $!.backtrace.join("\n")
@@ -116,17 +116,25 @@ module Crubyflie
         # Attemps to disconnect from the crazyflie.
         def close_link
             @commander.send_setpoint(0,0,0,0) if @link
-            sleep 0.1
+            sleep 0.05
+            uri = @link ? @link.uri.to_s : "nowhere"
             @link.disconnect(force=true) if @link
-            call_cb(:disconnected, @link.uri.to_s) if @link
+            @link = nil
             @receive_packet_thread.kill() if @receive_packet_thread
             @receive_packet_thread = nil
             @retry_packets_thread.kill() if @retry_packets_thread
+            @log.stop_packet_reader_thread()
             @retry_packets.clear()
             @crtp_queues.each do |k,q|
                 q.clear()
             end
-            @link = nil
+            call_cb(:disconnected, uri)
+        end
+
+        # Checks if there is an open link
+        # @return [TrueClass, FalseClass] true if there is an open link
+        def active?
+            return !@link.nil?
         end
 
         # Calls #RadioDriver::scan_interface()
@@ -158,7 +166,6 @@ module Crubyflie
             call_cb(:received_packet, packet)
             port = packet.port
             facility = CRTP_PORTS.invert[port]
-
             queue = @crtp_queues[facility]
             if queue then queue << packet
             else logger.warn "No queue for packet on port #{port}" end
@@ -169,9 +176,11 @@ module Crubyflie
             # Logging will send other packets such RESET_LOGGING
             # We make sure to handle them by running the thread
             # while we refresh the Log TOC
+            #logger.debug("Setup connection: Log TOC refresh")
             @log.start_packet_reader_thread()
             @log.refresh_toc()
             @log.stop_packet_reader_thread()
+            #logger.debug("Setup connection: Param TOC refresh")
             @param.refresh_toc()
             call_cb(:connection_setup_finished, @link.uri.to_s)
         end
@@ -232,8 +241,9 @@ module Crubyflie
                 logger.info "Connection ready!"
             end
 
+            # The message is an integer from 0 - 100
             @callbacks[:link][:quality] = Proc.new  do |m|
-                #do not do anything
+                #logger.debug "Link quality #{m}"
             end
 
             @callbacks[:link][:error] = Proc.new  do |m|

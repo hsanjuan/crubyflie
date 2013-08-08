@@ -37,7 +37,7 @@ module Crubyflie
         # Default size for the outgoing queue
         OUT_QUEUE_MAX_SIZE = 50
         # Default number of retries before disconnecting
-        RETRIES_BEFORE_DISCONNECT = 10
+        RETRIES_BEFORE_DISCONNECT = 20
 
         attr_reader :uri
         attr_reader :retries_before_disconnect, :out_queue_max_size
@@ -60,7 +60,7 @@ module Crubyflie
         # @param uri_s [String] a radio uri like radio://<dongle>/<ch>/<rate>
         # @param callbacks [Hash] blocks to call (see CALLBACKS contant values)
         # @param opts [Hash] options. Currently supported
-        #                    :retries_before_disconnect (defaults to 10) and
+        #                    :retries_before_disconnect (defaults to 20) and
         #                    :out_queue_max_size (defaults to 50)
         # @raise [CallbackMissing] when a necessary callback is not provided
         #                          (see CALLBACKS constant values)
@@ -122,10 +122,11 @@ module Crubyflie
         #                                       wait for out_queue to empty
         def disconnect(force=nil)
             kill_radio_thread(force)
-            return if !@crazyradio
-            @crazyradio.close()
             @in_queue.clear()
             @out_queue.clear()
+
+            return if !@crazyradio
+            @crazyradio.close()
             @crazyradio = nil
         end
 
@@ -137,7 +138,7 @@ module Crubyflie
             if (s = @out_queue.size) >= @out_queue_max_size
                 m = "Reached #{s} elements in outgoing queue"
                 @callbacks[:link_error_cb].call(m)
-                return
+                disconnect()
             end
 
             @out_queue << packet if !@shutdown_thread
@@ -188,6 +189,17 @@ module Crubyflie
                 return uris
             rescue USBDongleException
                 return []
+            rescue Exception
+                retries ||= 0
+                logger.error("Unknown error scanning interface: #{$!}")
+                @crazyradio.reopen()
+                retries += 1
+                if retries < 2
+                    logger.error("Retrying")
+                    sleep 0.5
+                    retry
+                end
+                return []
             ensure
                 @crazyradio.close() if @crazyradio
                 @crazyradio = nil
@@ -231,7 +243,8 @@ module Crubyflie
                     end
 
                     # Set this in function of the retries
-                    @callbacks[:link_quality_cb].call(ack.retry_count)
+                    quality = (10 - ack.retry_count) * 10
+                    @callbacks[:link_quality_cb].call(quality)
 
                     # Retry if we have not reached the limit
                     if !ack.ack
@@ -284,10 +297,10 @@ module Crubyflie
 
         def kill_radio_thread(force=false)
             if @radio_thread
-                @shutdown_thread = true
                 if force
                     @radio_thread.kill()
                 else
+                    @shutdown_thread = true
                     @radio_thread.join()
                 end
                 @radio_thread = nil
