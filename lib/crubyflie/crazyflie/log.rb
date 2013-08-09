@@ -109,6 +109,7 @@ module Crubyflie
 
         @@block_id_counter = 0
         attr_reader :ident, :period
+        attr_writer :data_callback
 
         # Initialize a LogBlock
         # @param variables [Array] a set of LogConfVariables
@@ -116,14 +117,14 @@ module Crubyflie
         #                             unpacked data related to this block
         # @param opts [Hash] current options:
         #                    :period, in centiseconds (100 = 1s)
-        def initialize(variables, data_callback=nil, opts={})
+        def initialize(variables, opts={})
             @variables = variables || []
             @ident = @@block_id_counter
             @@block_id_counter += 1
 
             @period = opts.delete(:period) || 10
 
-            @data_callback = data_callback
+            @data_callback = nil
         end
 
         # Finds out the binary data by unpacking each of the variables
@@ -200,7 +201,6 @@ module Crubyflie
         def create_log_block(log_conf)
             start_packet_reader_thread() if !@packet_reader_thread
             block = LogBlock.new(log_conf.variables,
-                                 log_conf.data_callback,
                                  {:period => log_conf.period})
             block_id = block.ident
             @log_blocks[block_id] = block
@@ -223,13 +223,18 @@ module Crubyflie
         end
 
         # Sends the START_LOGGING command for a given block.
-        # It should be called after #create_toc_log_block or
-        # #create_raw_memory_log_block commands as it should exist in the
+        # It should be called after #create_toc_log_block. This call
+        # will return immediately, but the provided block will be called
+        # regularly as logging data is received, until #stop_logging is
+        # issued for the same log
         # Crazyflie. It fails silently if the block does not exist.
         #
         # @param block_id [Integer]
-        def start_logging(block_id)
+        # @param block [Proc] a block to be called everytime the log data
+        #                     is received.
+        def start_logging(block_id, &data_callback)
             block = @log_blocks[block_id]
+            block.data_callback = data_callback
             return if !block
             start_packet_reader_thread() if !@packet_reader_thread
             packet = packet_factory()

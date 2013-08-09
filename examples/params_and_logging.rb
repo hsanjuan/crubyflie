@@ -36,13 +36,6 @@ cf.param.get_value("attitudepid.kd_pitch") do |value|
 end
 puts "--------"
 
-# Log Pitch 10 times
-logged = 0
-# This is the logging callback
-log_cb = Proc.new do |data|
-    warn "Pitch: #{data['stabilizer.pitch']}"
-    logged += 1
-end
 
 # We use 1 variable, is_toc = true
 # The last two 7 means it is stored and fetched as float
@@ -50,12 +43,18 @@ log_conf_var = LogConfVariable.new("stabilizer.pitch", true, 7, 7)
 
 # We create a configuration object
 # We want to fetch it every 0.1 secs
-log_conf = LogConf.new([log_conf_var], log_cb, {:period => 10})
+log_conf = LogConf.new([log_conf_var], {:period => 10})
 
 # With the configuration object, register a log_block
 block_id = cf.log.create_log_block(log_conf)
+
 # Start logging
-cf.log.start_logging(block_id)
+# Counter on how many times we have logged the pitch
+logged = 0
+cf.log.start_logging(block_id) do |data|
+    warn "Pitch: #{data['stabilizer.pitch']}"
+    logged += 1
+end
 
 # Wait until we have hit the log_cb 10 times
 while (logged < 10)

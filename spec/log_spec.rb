@@ -60,7 +60,8 @@ describe LogBlock do
             # 1 uint8, 1 uint16 and 1 uint32
             data = [255].pack('C') + [65535].pack('S<') + [16777215].pack('L<')
 
-            b = LogBlock.new(variables, cb) #3
+            b = LogBlock.new(variables) #3
+            b.data_callback = cb
             b.unpack_log_data(data)
             result.should == {
                 'var1' => 255,
@@ -106,8 +107,6 @@ describe Log do
     describe "#create_log_block" do
         it "should send the create block package for toc variables" do
             log_conf = double("LogConf")
-            cb = Proc.new {}
-
 
             var1 = LogConfVariable.new("var1", true, 0, 1)
 
@@ -118,7 +117,7 @@ describe Log do
             expect(var3).not_to receive(:address)
 
             variables = [var1, var2, var3]
-            log_conf = LogConf.new(variables, cb, {:period => 200})
+            log_conf = LogConf.new(variables, {:period => 200})
 
             # It is the 4th call to logblock.new in these specs
             expect(@logger).to receive(:debug).with("Adding block 4")
@@ -145,14 +144,16 @@ describe Log do
 
     describe "#start_logging" do
         it "should send the start logging packet" do
-            block = double("block")
-            expect(block).to receive(:period).and_return(30)
-            expect(@log.log_blocks).to receive(:[]).with(5).and_return(block)
+            logblock = double("logblock")
+            expect(logblock).to receive(:period).and_return(30)
+            expect(logblock).to receive(:data_callback=).with(an_instance_of(Proc))
+            expect(@log.log_blocks).to receive(:[]).with(5).and_return(logblock)
             expect(@logger).to receive(:debug)
             expect(@crazyflie).to receive(:send_packet) do |pk|
                 pk.data.should == [CMD_START_LOGGING, 5, 30]
             end
-            @log.start_logging(5)
+            @log.start_logging(5) do |values|
+            end
         end
     end
 

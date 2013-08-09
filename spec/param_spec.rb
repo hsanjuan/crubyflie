@@ -94,7 +94,7 @@ describe Param do
             }
 
             res = CRTPPacket.new()
-            @queue << res
+            expect(@queue).to receive(:pop).and_return(res)
 
             @param.set_value('gr.name', 1) do |response|
                 response.should == res
@@ -121,7 +121,7 @@ describe Param do
             }
 
             res = CRTPPacket.new()
-            @queue << res
+            expect(@queue).to receive(:pop).and_return(res)
 
             m = "Got answer to setting param 'gr.name' with '1'"
             expect(@logger).to receive(:debug).with(m)
@@ -157,7 +157,7 @@ describe Param do
 
             res = CRTPPacket.new()
             res.data = [3, 5, 0, 0, 0]
-            @queue << res
+            expect(@queue).to receive(:pop).and_return(res)
             @param.get_value('gr.name') do |value|
                 value.should == 5
             end

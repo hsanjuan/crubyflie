@@ -129,12 +129,15 @@ module Crubyflie
             @toc.fetch_from_crazyflie(@crazyflie, port, @in_queue)
         end
 
-        # Set the value of a paremeter
+        # Set the value of a paremeter. This call will only return after
+        # a ack response has been received, or will timeout if
+        # #CRTPConstants::WAIT_PACKET_TIMEOUT is reached.
         # @param name [String] parameter group.name
-        # @param value [String] a value. It must be packable as binary data,
+        # @param value [Numeric] a value. It must be packable as binary data,
         #                                the type being set in the params TOC
         # @param block [Proc] an optional block that will be called with the
-        #                     response to the update
+        #                     response CRTPPacket received. Otherwise will
+        #                     log to debug
         def set_value(name, value, &block)
             element = @toc[name]
             if element.nil?
@@ -148,6 +151,7 @@ module Crubyflie
                                  PARAM_WRITE_CHANNEL)
             packet.data = [ident]
             packet.data += [value].pack(element.directive()).unpack('C*')
+            @in_queue.clear()
             @crazyflie.send_packet(packet, true) # expect answer
 
             response = wait_for_response()
@@ -161,7 +165,10 @@ module Crubyflie
             end
         end
 
-        # Request an update for a parameter and call the provided block
+        # Request an update for a parameter and call the provided block with
+        # the value of the parameter. This call will block until the response
+        # has been received or the #CRTPConstants::WAIT_PACKET_TIMEOUT is
+        # reached.
         # @param name [String] a name in the form group.name
         # @param block [Proc] a block to be called with the value as argument
         def get_value(name, &block)
@@ -174,6 +181,7 @@ module Crubyflie
             packet.modify_header(nil, CRTP_PORTS[:param],
                                  PARAM_READ_CHANNEL)
             packet.data = [element.ident]
+            @in_queue.clear()
             @crazyflie.send_packet(packet, true)
 
             # Pop packages until mine comes up

@@ -31,8 +31,8 @@ module Crubyflie
         end
 
         # Reads all the characters from the Crazyflie that are queued, until
-        # the queue is empty, and then return. For each packet received,
-        # the given block is called with the payload.
+        # the queue is empty, and then return only after executing the 
+        # given block for each packet that was in the queue.
         # @param block [Proc] a block to call with the read information
         def read(&block)
             while @in_queue.size > 0 do
@@ -44,6 +44,8 @@ module Crubyflie
 
         # Reads all the characters from the Crazyflie constantly
         # and yields on the the given block is called with the payload.
+        # This call will return immediately, but the block will be
+        # called asynchronously until #stop_reading() is called.
         # Use stop_read() to stop.
         # @param block [Proc] a block to call with the read information
         def start_reading(&block)
