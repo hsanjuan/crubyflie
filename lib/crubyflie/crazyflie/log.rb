@@ -270,6 +270,7 @@ module Crubyflie
         def start_packet_reader_thread
             stop_packet_reader_thread()
             @packet_reader_thread = Thread.new do
+                Thread.current.priority = -4
                 loop do
                     packet = @in_queue.pop() # block here if nothing is up
                     # @todo align these two

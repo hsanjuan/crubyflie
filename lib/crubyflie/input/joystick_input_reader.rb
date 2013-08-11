@@ -39,7 +39,7 @@ module Crubyflie
         # Default configuration file
         DEFAULT_CONFIG_PATH = File.join(File.dirname(__FILE__), "..","..","..",
                                         "configs", "joystick_default.yaml")
-        
+
         attr_reader :config, :joystick_index
         # Initializes the Joystick configuration and the SDL library
         # leaving things ready to read values
@@ -178,6 +178,7 @@ module Crubyflie
             # Convert
             if is_thrust
                 value = pre_normalize_thrust(value, input_range, output_range)
+                value = normalize_thrust(value)
             else
                 value = normalize(value, input_range, output_range)
             end
@@ -203,10 +204,6 @@ module Crubyflie
                 end
             end
 
-            if is_thrust
-                value = normalize_thrust(value)
-            end
-
             @config[:axis][axis_id][:last_poll] = current_time
             @config[:axis][axis_id][:last_value] = value
 
@@ -230,17 +227,31 @@ module Crubyflie
         # Returns integer from 10.000 to 60.000 which is what the crazyflie
         # expects
         def normalize_thrust(value)
-            return normalize(value, (0..100), (10000..60000)).round
+            return normalize(value, (0..100), (9500..60000)).round
         end
         private :normalize_thrust
 
         # Reads the specified joystick button. Since we may want to calibrate
-        # buttons etc, we return an integer
+        # buttons etc, we return an integer. In only reads the button if
+        # the reading has not be done in the last 1 second to avoid
+        # flapping
         # @param button_id [Integer] the SDL button number
         # @return [Fixnum] -1 if  the button is not pressed, 1 otherwise
         def read_button(button_id)
             return -1 if !@joystick
-            return @joystick.button(button_id) ? 1 : -1
+
+            last_poll = @config[:buttons][button_id][:last_poll] || 0
+            last_value = @config[:buttons][button_id][:last_value] || -1
+            value = @joystick.button(button_id) ? 1 : -1
+            current_time = Time.now.to_f
+
+            if (current_time - last_poll) > 0.5
+                @config[:buttons][button_id][:last_value] = value
+                @config[:buttons][button_id][:last_poll] = current_time
+                return value
+            else
+                return -1
+            end
         end
         private :read_button
 

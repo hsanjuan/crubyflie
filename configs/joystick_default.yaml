@@ -1,3 +1,5 @@
+# Default joystick configuration file. It mimics the PS3_Mode2 original
+# configuration file
 :type: "Joystick"
 :axis:
   0:
@@ -5,7 +7,7 @@
     :action: :roll
     :input_range: "-32768:32767" # Optional - SDL dependant. Defaults to this.
     :output_range: "-30:30" # Min/Max crazyflie angle in degrees.
-    :max_change_rate: 30 # Max angle change rate per second. Optional
+    :max_change_rate: 600 # Max angle change rate per second. Optional
     :dead_zone: "-100:100" # Deadzone, within input range
     :invert: false # Invert the axis
     :calibration: 0 # This value is added to the raw value read from joystick
@@ -14,7 +16,7 @@
     :action: :pitch
     :input_range: "-32768:32767"
     :output_range: "-30:30"
-    :max_change_rate: 30 # Max angle change rate per second. Optional
+    :max_change_rate: 600 # Max angle change rate per second. Optional
     :dead_zone: "-100:100" # Deadzone, within input range
     :invert: true
     :calibration: 0
@@ -22,17 +24,19 @@
     :description: "Yaw Axis"
     :action: :yaw
     :input_range: "-32768:32767"
-    :output_range: "-30:30" 
-    :max_change_rate: 30 
-    :dead_zone: "-1000:1000" 
+    :output_range: "-200:200"
+    :max_change_rate: 800
+    :dead_zone: "-1000:1000"
     :invert: false
     :calibration: 0
   3:
     :description: "Thrust axis"
     :action: :thrust
     :input_range: "-32768:32767"
-    :output_range: "30:80" # Min/max thrust output is represented in 0-100%
-    :max_change_rate: 15 # Max % change rate per second when lowering thrust
+    :output_range: "0:80" # Min/max thrust output is represented in 0-100%
+    # Max change rate per second when lowering thrust. Thrust level is
+    # ranges 9500 and 60000
+    :max_change_rate: 40000
     :dead_zone: "-100:100" # Deadzone, within input range
     :invert: true
     :calibration: 0

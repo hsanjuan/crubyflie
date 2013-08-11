@@ -115,10 +115,11 @@ module Crubyflie
                     @calibrations[:roll] -= 1
                 when :pitch_inc_cal
                     @calibrations[:pitch] += 1
-                when :pithc_dec_cal
+                when :pitch_dec_cal
                     @calibrations[:pitch] -= 1
                 when :switch_xmode
                     @xmode = !@xmode if value > 0
+                    logger.info("Xmode is #{@xmode}") if value > 0
                 when :close_link
                     crazyflie.close_link() if value > 0
                 end
@@ -139,12 +140,14 @@ module Crubyflie
                 end
             end
 
-            pitch = setpoint[:pitch]
-            roll  = setpoint[:roll]
-            yaw   = setpoint[:yaw]
-            thrust= setpoint[:thrust]
+            pitch  = setpoint[:pitch]
+            roll   = setpoint[:roll]
+            yaw    = setpoint[:yaw]
+            thrust = setpoint[:thrust]
 
             if pitch && roll && yaw && thrust
+                m = "Sending R: #{roll} P: #{pitch} Y: #{yaw} T: #{thrust}"
+                #logger.debug(m)
                 crazyflie.commander.send_setpoint(roll, pitch, yaw, thrust,
                                                   @xmode)
             end

@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Crubyflie.  If not, see <http://www.gnu.org/licenses/>
 
+require 'timeout'
 require 'crazyflie/toc_cache'
 
 module Crubyflie
@@ -159,7 +160,8 @@ module Crubyflie
             while response.channel != TOC_CHANNEL do
                 in_queue << response
                 logger.debug "Got a non-TOC packet. Requeueing..."
-                sleep 0.1
+                Thread.pass
+                # @todo timeout
                 response = in_queue.pop()
             end
             data = response.data
@@ -183,15 +185,27 @@ module Crubyflie
             # We proceed to request all the TOC elements
             requested_item = 0
             while requested_item < total_toc_items do
+                wait = WAIT_PACKET_TIMEOUT
                 request_toc_element(crazyflie, requested_item, port)
-                response = in_queue.pop() # block here
+
+                begin
+                    response = timeout(wait, WaitTimeoutException) do
+                        response = in_queue.pop() # block here
+                    end
+                rescue
+                    retries ||= 0
+                    retries += 1
+                    retry if retries < 2
+                    logger.error("Timeout reached waiting for TOC element")
+                    raise $!
+                end
                 if response.channel != TOC_CHANNEL
                     # Requeue
                     in_queue << response
                     mesg =  "Got a non-TOC packet on #{response.channel}."
                     mesg << " Requeueing..."
                     logger.debug(mesg)
-                    sleep 0.1 # Lets give a chance to other threads
+                    Thread.pass
                     next
                 end
                 payload = response.data_repack()[1..-1] # leave byte 0 out

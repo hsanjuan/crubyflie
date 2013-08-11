@@ -20,6 +20,7 @@ $: << File.join(File.dirname(__FILE__), 'crubyflie')
 
 require 'crubyflie_logger'
 require 'crazyflie'
+require 'input/joystick_input_reader'
 require 'version'
 
 # The Crubyflie modules wraps all the Crubyflie code so we don't

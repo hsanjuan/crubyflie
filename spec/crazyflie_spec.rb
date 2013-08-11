@@ -138,7 +138,7 @@ describe Crazyflie do
             pk = @default_pk
             expect(@link).to receive(:send_packet).with(pk).at_least(:twice)
             expect(@logger).to receive(:info).at_least(:once)
-            expect(@logger).to receive(:debug)
+            expect(@logger).to receive(:debug).at_least(:once)
             @cf.open_link(@uri)
             @cf.send_packet(@default_pk, true)
             sleep 0.5

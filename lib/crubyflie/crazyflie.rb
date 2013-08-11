@@ -165,8 +165,9 @@ module Crubyflie
             setup_retry(packet) if expect_answer
         end
 
+
         def receive_packet
-            packet = @link.receive_packet() # block
+            packet = @link.receive_packet(false) # block here
             return if packet.nil?
             call_cb(:received_packet, packet)
             port = packet.port
@@ -193,19 +194,25 @@ module Crubyflie
 
         def receive_packet_thread
             @receive_packet_thread = Thread.new do
+                Thread.current.priority = -2
                 loop do
-                    if @link.nil? then sleep 1 else receive_packet() end
+                    if @link.nil? then sleep 1
+                    else receive_packet(); Thread.pass() end
                 end
             end
 
             # This threads resends packets for which no answer has been
             # received.
             @retry_packets_thread = Thread.new do
+                Thread.current.priority = -5
+
                 loop do
                     @retry_packets.each do |k,v|
                         now = Time.now.to_f
                         ts = v[:timestamp]
                         if now - ts >= 0.2
+                            pk = v[:packet]
+                            logger.debug("Replay on #{pk.port}:#{pk.channel}")
                             send_packet(v[:packet], true)
                         end
                     end
@@ -227,6 +234,7 @@ module Crubyflie
             @callbacks[:received_packet][:delete_timer] = Proc.new do |pk|
                 sym = "port_#{pk.port}".to_sym
                 @retry_packets.delete(sym)
+                #logger.debug("Packet: #{pk.port}: #{pk.channel}")
             end
 
             @callbacks[:disconnected][:log] = Proc.new do |uri|

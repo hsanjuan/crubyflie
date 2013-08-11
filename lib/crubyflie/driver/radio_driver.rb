@@ -221,6 +221,7 @@ module Crubyflie
         # crazyradio do the waiting?
         def start_radio_thread
             @radio_thread = Thread.new do |thr|
+                Thread.current.priority = 5
                 out_data = [0xFF]
                 retries = @retries_before_disconnect
                 should_sleep = 0
