@@ -38,7 +38,7 @@ describe Crazyflie do
         allow(@link).to receive(:connect)
         allow(@link).to receive(:disconnect)
         allow(@link).to receive(:receive_packet)
-        allow(@link).to receive(:uri).and_return(URI(@uri))
+        allow(@link).to receive(:uri).and_return(CrubyflieURI.new(@uri))
 
         #allow_any_instance_of(CrubyflieLogger).to receive(:info)
 

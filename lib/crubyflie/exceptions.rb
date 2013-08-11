@@ -18,7 +18,7 @@
 
 module Crubyflie
     # Raised when the radio URI is invalid
-    class InvalidURIType < Exception; end
+    class InvalidURIException < Exception; end
     # Raised when an radio link is already open
     class OpenLink < Exception; end
     # Raised when a radio driver callback parameter is missing

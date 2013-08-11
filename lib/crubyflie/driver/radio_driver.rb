@@ -18,29 +18,38 @@
 
 
 require 'thread'
-require 'uri'
 
 require 'exceptions'
 require 'driver/crtp_packet'
 require 'crazyradio/crazyradio'
 
-if RUBY_VERSION < "1.9.3"
-    # Monkey patch URI Generic to that Ruby < 1.9.3 does not
-    # complain about these radio URIs
-    module URI
-        # Generic URI class
-        class Generic
-            # We force this to true, indicating that generic URIs (like radio://)
-            # can use a registry part. This bug(?) does not manifest in later
-            # ruby versions
-            def self.use_registry
-                true
-            end
-        end
-    end
-end
+
 
 module Crubyflie
+    # Small URI class since Ruby URI < 1.9.3 gives problems parsing
+    # Crazyflie URIs
+    class CrubyflieURI
+        attr_reader :scheme, :dongle, :channel, :rate
+        def initialize(uri_str)
+            @uri_str = uri_str
+            @scheme, @dongle, @channel, @rate = split()
+            if @scheme.nil? || @dongle.nil? || @channel.nil? || @rate.nil? ||
+                    @scheme != 'radio'
+                raise InvalidURIException.new('Bad URI')
+            end
+        end
+
+        def to_s
+            @uri_str
+        end
+
+        def split
+            @uri_str.sub(':', '').sub('//','/').split('/')
+        end
+        private :split
+    end
+
+
     # This layer takes care of connecting to the crazyradio and
     # managing the incoming and outgoing queues. This is done
     # by spawing a thread.
@@ -80,7 +89,7 @@ module Crubyflie
         #                    :out_queue_max_size (defaults to 50)
         # @raise [CallbackMissing] when a necessary callback is not provided
         #                          (see CALLBACKS constant values)
-        # @raise [InvalidURIType] when the URI is not a valid radio URI
+        # @raise [InvalidURIException] when the URI is not a valid radio URI
         # @raise [OpenLink] when a link is already open
         def connect(uri_s, callbacks={}, opts={})
             # Check if apparently there is an open link
@@ -92,12 +101,12 @@ module Crubyflie
 
             # Parse URI to initialize Crazyradio
             # @todo: better control input. It defaults to 0
-            @uri = URI(uri_s)
-            dongle_number = @uri.host.to_i
-            channel, rate = @uri.path.split('/')[1..-1] # remove leading /
-            channel = channel.to_i
-            # @todo this should be taken care of in crazyradio
+            @uri = CrubyflieURI.new(uri_s)
+            dongle_number = @uri.dongle.to_i
+            channel = @uri.channel.to_i
+            rate = @uri.rate
 
+            # @todo this should be taken care of in crazyradio
             case rate
             when "250K"
                 rate = CrazyradioConstants::DR_250KPS
@@ -106,7 +115,7 @@ module Crubyflie
             when "2M"
                 rate = CrazyradioConstants::DR_2MPS
             else
-                raise InvalidURIType.new("Bad radio rate")
+                raise InvalidURIException.new("Bad radio rate")
             end
 
             # Fill in the callbacks Hash
