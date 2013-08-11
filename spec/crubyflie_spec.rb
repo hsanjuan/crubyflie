@@ -16,5 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Crubyflie.  If not, see <http://www.gnu.org/licenses/>
 
+$: << File.dirname(__FILE__)
 require 'rspec'
-require_relative 'spec_helper'
+require 'spec_helper'

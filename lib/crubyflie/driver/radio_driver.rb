@@ -24,6 +24,22 @@ require 'exceptions'
 require 'driver/crtp_packet'
 require 'crazyradio/crazyradio'
 
+if RUBY_VERSION < "1.9.3"
+    # Monkey patch URI Generic to that Ruby < 1.9.3 does not
+    # complain about these radio URIs
+    module URI
+        # Generic URI class
+        class Generic
+            # We force this to true, indicating that generic URIs (like radio://)
+            # can use a registry part. This bug(?) does not manifest in later
+            # ruby versions
+            def self.use_registry
+                true
+            end
+        end
+    end
+end
+
 module Crubyflie
     # This layer takes care of connecting to the crazyradio and
     # managing the incoming and outgoing queues. This is done
