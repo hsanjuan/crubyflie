@@ -1,0 +1,44 @@
+:type: "Joystick"
+:axis:
+  0:
+    :description: "Roll Axis"
+    :action: :roll
+    :input_range: "-32768:32767" # Optional - SDL dependant. Defaults to this.
+    :output_range: "-30:30" # Min/Max crazyflie angle in degrees.
+    :max_change_rate: 30 # Max angle change rate per second. Optional
+    :dead_zone: "-100:100" # Deadzone, within input range
+    :invert: false # Invert the axis
+    :calibration: 0 # This value is added to the raw value read from joystick
+  1:
+    :description: "Pitch Axis"
+    :action: :pitch
+    :input_range: "-32768:32767"
+    :output_range: "-30:30"
+    :max_change_rate: 30 # Max angle change rate per second. Optional
+    :dead_zone: "-100:100" # Deadzone, within input range
+    :invert: true
+    :calibration: 0
+  2:
+    :description: "Yaw Axis"
+    :action: :yaw
+    :input_range: "-32768:32767"
+    :output_range: "-30:30" 
+    :max_change_rate: 30 
+    :dead_zone: "-1000:1000" 
+    :invert: false
+    :calibration: 0
+  3:
+    :description: "Thrust axis"
+    :action: :thrust
+    :input_range: "-32768:32767"
+    :output_range: "30:80" # Min/max thrust output is represented in 0-100%
+    :max_change_rate: 15 # Max % change rate per second when lowering thrust
+    :dead_zone: "-100:100" # Deadzone, within input range
+    :invert: true
+    :calibration: 0
+
+:buttons:
+  0:
+    :action: :switch_xmode
+  1:
+    :action: :close_link

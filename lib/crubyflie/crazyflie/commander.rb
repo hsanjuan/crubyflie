@@ -21,10 +21,8 @@ module Crubyflie
     # Crazyflie. You want to use this class to fly your Crazyflie
     class Commander
         # Initialize the facility
-        attr_accessor :xmode
         def initialize(crazyflie)
             @crazyflie = crazyflie
-            @xmode = false
         end
 
         # Send a setpoint to the Crazyflie
@@ -38,8 +36,8 @@ module Crubyflie
         # @param thrust [Integer] thrust is an integer value ranging
         #                         from 10001 (next to no power) to
         #                         60000 (full power)
-        def send_setpoint(roll, pitch, yaw, thrust)
-            if @xmode
+        def send_setpoint(roll, pitch, yaw, thrust, xmode=false)
+            if xmode
                 roll = 0.707 * (roll - pitch)
                 pitch = 0.707 * (roll + pitch)
             end

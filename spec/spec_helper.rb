@@ -46,4 +46,6 @@ require 'log_spec'
 require 'param_spec'
 require 'console_spec'
 require 'commander_spec'
-
+require 'joystick_input_reader_spec'
+require 'input_reader_spec'
+require 'crubyflie_logger_spec'

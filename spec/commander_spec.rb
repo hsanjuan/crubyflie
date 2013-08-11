@@ -32,9 +32,6 @@ describe Commander do
     describe "#initialize" do
         it "should initialize the facility" do
             c = Commander.new(@crazyflie)
-            c.xmode.should == false
-            c.xmode = true
-            c.xmode.should == true
         end
     end
 
@@ -64,8 +61,7 @@ describe Commander do
                 data[3].should == 6
             end
 
-            @commander.xmode = true
-            @commander.send_setpoint(1,2,3,6)
+            @commander.send_setpoint(1,2,3,6, true)
         end
     end
 end

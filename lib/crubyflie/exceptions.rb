@@ -31,4 +31,6 @@ module Crubyflie
     class RadioThreadException < Exception; end
     # Expected a package but it took to long to get it
     class WaitTimeoutException < Exception; end
+    # Raised when there is a problem initializing a joystick
+    class JoystickException < Exception; end
 end

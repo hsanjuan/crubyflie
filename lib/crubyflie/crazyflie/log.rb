@@ -113,8 +113,6 @@ module Crubyflie
 
         # Initialize a LogBlock
         # @param variables [Array] a set of LogConfVariables
-        # @param data_callback [Proc] a callback that receives a hash of
-        #                             unpacked data related to this block
         # @param opts [Hash] current options:
         #                    :period, in centiseconds (100 = 1s)
         def initialize(variables, opts={})
@@ -230,8 +228,8 @@ module Crubyflie
         # Crazyflie. It fails silently if the block does not exist.
         #
         # @param block_id [Integer]
-        # @param block [Proc] a block to be called everytime the log data
-        #                     is received.
+        # @param data_callback [Proc] a block to be called everytime
+        #                             the log data is received.
         def start_logging(block_id, &data_callback)
             block = @log_blocks[block_id]
             block.data_callback = data_callback
@@ -286,7 +284,7 @@ module Crubyflie
                         sleep 0.2
                     else
                         logger.debug("Log on #{packet.channel}. Cannot handle")
-                        # @in_queue << packet
+                        ## @in_queue << packet
                     end
                 end
             end
