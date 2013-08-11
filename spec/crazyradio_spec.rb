@@ -106,16 +106,18 @@ describe Crazyradio do
 
     describe "#factory" do
         it "should raise an exception if no dongles are found" do
-            do_this = receive(:devices).and_return([])
-            allow_any_instance_of(LIBUSB::Context).to do_this
+            context = double("Context")
+            expect(LIBUSB::Context).to receive(:new).and_return(context)
+            expect(context).to receive(:devices).and_return([])
 
             expect { Crazyradio.factory() }.to raise_error(USBDongleException,
                                                            "No dongles found")
         end
 
         it "should provide a new crazyradio item" do
-            do_this = receive(:devices).and_return([@device])
-            allow_any_instance_of(LIBUSB::Context).to do_this
+            context = double("Context")
+            expect(LIBUSB::Context).to receive(:new).and_return(context)
+            expect(context).to receive(:devices).and_return([@device])
             Crazyradio.factory()
         end
     end
