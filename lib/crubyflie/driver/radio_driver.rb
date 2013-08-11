@@ -30,6 +30,8 @@ module Crubyflie
     # Crazyflie URIs
     class CrubyflieURI
         attr_reader :scheme, :dongle, :channel, :rate
+        # Initialize an URI
+        # @param uri_str [String] the URI
         def initialize(uri_str)
             @uri_str = uri_str
             @scheme, @dongle, @channel, @rate = split()
@@ -39,10 +41,13 @@ module Crubyflie
             end
         end
 
+        # Return URI as string
+        # @return [String] a string representation of the URI
         def to_s
             @uri_str
         end
 
+        # Quick, dirty uri split
         def split
             @uri_str.sub(':', '').sub('//','/').split('/')
         end
