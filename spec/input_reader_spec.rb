@@ -27,7 +27,8 @@ describe InputReader do
         allow(SDL::Joystick).to receive(:index_name).and_return("My Joystick")
         allow(SDL::Joystick).to receive(:poll).with(false)
         expect(SDL::Joystick).not_to receive(:poll).with(true)
-        @joystick = Joystick.new()
+        path = File.join(File.dirname(__FILE__), 'joystick_cfg.yaml')
+        @joystick = Joystick.new(path)
 
         @logger = @joystick.logger
         allow(@logger).to receive(:info)
@@ -51,7 +52,7 @@ describe InputReader do
                 :roll => 0,
                 :pitch => -30,
                 :yaw => 0,
-                :thrust => 50000
+                :thrust => 49900
             }
 
             @joystick.button_readings.should == {
@@ -76,7 +77,7 @@ describe InputReader do
             cmder = double("Commander")
             expect(@cf).to receive(:commander).and_return(cmder)
             expect(cmder).to receive(:send_setpoint).with(0, -30, 0,
-                                                          50000, false)
+                                                          49900, false)
             @joystick.read_input()
             @joystick.apply_input(@cf)
         end
@@ -125,7 +126,7 @@ describe InputReader do
             cmder = double("Commander")
             expect(@cf).to receive(:commander).and_return(cmder)
             expect(cmder).to receive(:send_setpoint).with(0, -30, 0,
-                                                          50000, true)
+                                                          49900, true)
             @joystick.read_input()
             @joystick.apply_input(@cf)
             @joystick.xmode.should == true

@@ -268,14 +268,12 @@ module Crubyflie
         # @return [Float] the linear-corresponding value in the destination
         #                 range
         def normalize(value, from_range, to_range)
-            from_width = from_range.size.to_f - 1
-            to_width = to_range.size.to_f - 1
+            from_w = from_range.size.to_f - 1
+            to_w = to_range.size.to_f - 1
             from_min = from_range.first.to_f
             to_min = to_range.first.to_f
-#            puts <<EOF
-#"#{to_min}+(#{value.to_f}-#{from_min})*(#{to_width}/#{from_width})"
-#EOF
-            r = to_min + (value.to_f - from_min) * (to_width / from_width)
+            # puts "#{to_min}+(#{value.to_f}-#{from_min})*(#{to_w}/#{from_w})
+            r = to_min + (value.to_f - from_min) * (to_w / from_w)
             return r.round(3)
         end
     end

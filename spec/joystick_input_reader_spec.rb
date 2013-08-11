@@ -29,7 +29,9 @@ describe Joystick do
         allow(SDL::Joystick).to receive(:index_name).and_return("My Joystick")
         allow(SDL::Joystick).to receive(:poll).with(false)
         expect(SDL::Joystick).not_to receive(:poll).with(true)
-        @joystick = Joystick.new()
+        @path = File.join(File.dirname(__FILE__), 'joystick_cfg.yaml')
+
+        @joystick = Joystick.new(@path)
 
         @logger = @joystick.logger
         allow(@logger).to receive(:info)
@@ -113,7 +115,7 @@ describe Joystick do
     describe "#init_sdl" do
         it "should raise an exception if the joystick index is invalid" do
             expect {
-                js = Joystick.new(Joystick::DEFAULT_CONFIG_PATH, 33)
+                js = Joystick.new(@path, 33)
                 allow(js.logger).to receive(:info)
                 js.init()
             }.to raise_exception(JoystickException, "No valid joystick index")
@@ -121,7 +123,7 @@ describe Joystick do
 
         it "should open the joystick" do
             expect(SDL::Joystick).to receive(:open).with(2)
-            js = Joystick.new(Joystick::DEFAULT_CONFIG_PATH, 2)
+            js = Joystick.new(@path, 2)
             allow(js.logger).to receive(:info)
             js.init()
         end
@@ -215,7 +217,7 @@ describe Joystick do
     describe "#normalize_thrust" do
         it "should return values within the range expected by the CF" do
             v = @joystick.send(:normalize_thrust, 50)
-            v.should == 35000
+            v.should == 34750
             v.should be_an_instance_of Fixnum
         end
     end
@@ -223,13 +225,13 @@ describe Joystick do
     describe "#read button" do
         it "should return 1 when pressed" do
             expect(@sdl_joystick).to receive(:button).and_return(true)
-            v = @joystick.send(:read_button, 3)
+            v = @joystick.send(:read_button, 1)
             v.should == 1
         end
         
         it "should return -1 when not pressed" do
             expect(@sdl_joystick).to receive(:button).and_return(false)
-            v = @joystick.send(:read_button, 2)
+            v = @joystick.send(:read_button, 0)
             v.should == -1
         end
     end
