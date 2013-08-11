@@ -30,7 +30,7 @@ Client library to control a Crazyflie. This library allows to talk to a
 crazyflie using the USB radio dongle.
 EOF
     spec.summary       = "Crazyflie ruby client"
-    spec.homepage      = ""
+    spec.homepage      = "https://github.com/hsanjuan/crubyflie"
     spec.license       = "GPLv3"
 
     spec.files         = `git ls-files`.split($/)
