@@ -16,8 +16,8 @@
     :action: :pitch
     :input_range: "-32768:32767"
     :output_range: "-30:30"
-    :max_change_rate: 600 # Max angle change rate per second. Optional
-    :dead_zone: "-100:100" # Deadzone, within input range
+    :max_change_rate: 600
+    :dead_zone: "-100:100"
     :invert: true
     :calibration: 0
   2:
@@ -33,9 +33,9 @@
     :description: "Thrust axis"
     :action: :thrust
     :input_range: "-32768:32767"
-    :output_range: "0:80" # Min/max thrust output is represented in 0-100%
-    # Max change rate per second when lowering thrust. Thrust level is
-    # ranges 9500 and 60000
+    :output_range: "0:80" # Exception: Min/max thrust output is represented in 0-100%!
+    # Max change rate per second when lowering thrust. Note that this
+    # is a change ranging between ranges 9500 and 60000
     :max_change_rate: 40000
     :dead_zone: "-100:100" # Deadzone, within input range
     :invert: true
