@@ -18,6 +18,7 @@
 
 require 'simplecov'
 require 'coveralls'
+SimpleCov.formatter = Coveralls::SimpleCov::Formatter
 SimpleCov.at_exit do
     SimpleCov.minimum_coverage 95
     SimpleCov.result.format!

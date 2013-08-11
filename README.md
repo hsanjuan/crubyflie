@@ -1,7 +1,7 @@
 Crubyflie - A Ruby client and libraries for Crazyflie
 =====================================================
 
-[![Build Status](https://travis-ci.org/hsanjuan/crubyflie.png?branch=master)](https://travis-ci.org/hsanjuan/crubyflie)
+[![Build Status](https://travis-ci.org/hsanjuan/crubyflie.png?branch=master)](https://travis-ci.org/hsanjuan/crubyflie) [![Coverage Status](https://coveralls.io/repos/hsanjuan/crubyflie/badge.png)](https://coveralls.io/r/hsanjuan/crubyflie)
 
 Crubyflie is a Ruby rewrite of the [Crazyflie quadcopter](http://www.bitcraze.se/category/crazyflie/) Python [client libraries](https://bitbucket.org/bitcraze/crazyflie-pc-client), with some customizations.
 
