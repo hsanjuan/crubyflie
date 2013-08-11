@@ -91,12 +91,12 @@ describe Joystick do
         it "should raise exception if the axis or buttons are missing" do
             cfg = {
                 :type => "Joystick",
-                :axis => {0 => {:action => :yaw}},
+                :buttons => {0 => {:action => :yaw}},
             }
             expect(YAML).to receive(:load_file).and_return(cfg)
             expect {
                 @joystick.read_configuration('baa')
-            }.to raise_exception(JoystickException, "No buttons section")
+            }.to raise_exception(JoystickException, "No axis section")
         end
 
         it "should raise exception if an axis has no action" do
@@ -131,93 +131,178 @@ describe Joystick do
 
     describe "#read_axis" do
         it "should read the axis value with all the defaults" do
-            @joystick.config[:axis][8] = {:action => :test}
+            config = {
+                :type => "Joystick",
+                :axis => {
+                    8 =>{
+                        :action => :test,
+                    }
+                }
+            }
+            expect(YAML).to receive(:load_file).and_return(config)
             expect(@sdl_joystick).to receive(:axis).with(8).and_return(-32768)
+            @joystick.read_configuration('baa')
             value = @joystick.read_axis(8)
             value.should == -30
         end
 
         it "should put values out of range in range" do
-            @joystick.config[:axis][8] = {:action => :test}
+            config = {
+                :type => "Joystick",
+                :axis => {
+                    8 =>{
+                        :action => :test,
+                    }
+                }
+            }
+            expect(YAML).to receive(:load_file).and_return(config)
             expect(@sdl_joystick).to receive(:axis).with(8).and_return(-40000)
+            @joystick.read_configuration('baa')
             value = @joystick.read_axis(8)
             value.should == -30
         end
 
         it "should invert values if requested" do
-            @joystick.config[:axis][8] = {:action => :test, :invert => true}
+            config = {
+                :type => "Joystick",
+                :axis => {
+                    8 =>{
+                        :action => :test,
+                        :invert => true
+                    }
+                }
+            }
+            expect(YAML).to receive(:load_file).and_return(config)
             expect(@sdl_joystick).to receive(:axis).with(8).and_return(-32767)
+            @joystick.read_configuration('baa')
             value = @joystick.read_axis(8)
             value.should == 30
         end
 
         it "should put values in the deadzone as 0" do
-            @joystick.config[:axis][8] = {
-                :action => :test,
-                :dead_zone => "-40:40"
+            config = {
+                :type => "Joystick",
+                :axis => {
+                    8 =>{
+                        :action => :test,
+                        :dead_zone => "-40:40"
+                    }
+                }
             }
+            expect(YAML).to receive(:load_file).and_return(config)
             expect(@sdl_joystick).to receive(:axis).with(8).and_return(23)
+            @joystick.read_configuration('baa')
             value = @joystick.read_axis(8)
             value.should == 0
         end
 
         it "should normalize the thrust correctly" do
-            @joystick.config[:axis][8] = {
-                :action => :thrust,
-                :output_range => "0:100"
+            config = {
+                :type => "Joystick",
+                :axis => {
+                    8 =>{
+                        :action => :thrust,
+                        :output_range => "0:100"
+                    }
+                }
             }
+            expect(YAML).to receive(:load_file).and_return(config)
             expect(@sdl_joystick).to receive(:axis).with(8).and_return(32767)
+            @joystick.read_configuration('baa')
             value = @joystick.read_axis(8)
             value.should == 60000
         end
 
         it "should throotle the change rate correctly" do
-            @joystick.config[:axis][8] = {
-                :action => :test,
-                :output_range => "100:200",
-                :input_range => "0:100",
-                :max_change_rate => 1,
-                :last_poll => 0.500,
-                :last_value => 150
+            config = {
+                :type => "Joystick",
+                :axis => {
+                    8 => {
+                        :action => :thrust,
+                        :output_range => "0:100",
+                        :input_range => "100:200",
+                        :max_change_rate => 1,
+                        :last_poll => 0.500,
+                        :last_value => 34750
+                    }
+                }
             }
+            expect(YAML).to receive(:load_file).and_return(config)
+
             allow(Time).to receive(:now).and_return(1.0) # 0.5 secs after
-            expect(@sdl_joystick).to receive(:axis).with(8).and_return(60)
+            expect(@sdl_joystick).to receive(:axis).with(8).and_return(140)
+            @joystick.read_configuration('baa')
             value = @joystick.read_axis(8)
-            value.should == 150.5
+            value.should == 34749.5
         end
 
         it "should not throotle the change rate when increasing thrust" do
-            @joystick.config[:axis][8] = {
-                :action => :thrust,
-                :output_range => "0:100",
-                :input_range => "0:100",
-                :max_change_rate => 1,
-                :last_poll => 0.500,
-                :last_value => 50
+            config = {
+                :type => "Joystick",
+                :axis => {
+                    8 =>{
+                        :action => :thrust,
+                        :output_range => "0:100",
+                        :input_range => "0:100",
+                        :max_change_rate => 1,
+                        :last_poll => 0.500,
+                        :last_value => 50
+                    }
+                }
             }
+            expect(YAML).to receive(:load_file).and_return(config)
+
             allow(Time).to receive(:now).and_return(1.0) # 0.5 secs after
             expect(@sdl_joystick).to receive(:axis).with(8).and_return(100)
+            @joystick.read_configuration('baa')
             value = @joystick.read_axis(8)
             value.should == 60000
         end
     end
 
-    describe "#pre_normalize_thrust" do
-        it "should discard negative axis values" do
-            v = @joystick.send(:pre_normalize_thrust, -12, (-20..20), (0..100))
-            v.should == 0
-        end
-
-        it "should pre-normalize to the expected" do
-            v = @joystick.send(:pre_normalize_thrust, 5, (-10..10), (0..50))
-            v.should == 50
-        end
-    end
-
     describe "#normalize_thrust" do
         it "should return values within the range expected by the CF" do
-            v = @joystick.send(:normalize_thrust, 50)
+            v = @joystick.send(:normalize_thrust, 5000,
+                               {
+                                   :start => -10000.0,
+                                   :end   => 10000.0,
+                                   :width => 20000.0
+                               },{
+                                   :start => 0.0,
+                                   :end   => 80.0,
+                                   :width => 80.0
+                               })
             v.should == 34750
+            v.should be_an_instance_of Fixnum
+        end
+
+        it "should set values under the given range to the min" do
+            v = @joystick.send(:normalize_thrust, 0,
+                               {
+                                   :start => -10000.0,
+                                   :end   => 10000.0,
+                                   :width => 20000.to_f
+                               },{
+                                   :start => 30.0,
+                                   :end   => 80.0,
+                                   :width => 50.0
+                               })
+            v.should == 24650 # 30% of 9500-60000
+            v.should be_an_instance_of Fixnum
+        end
+
+        it "should set values over the given range to the max" do
+            v = @joystick.send(:normalize_thrust, 32767,
+                               {
+                                   :start => -10000.0,
+                                   :end   => +10000.0,
+                                   :width => 20000.to_f
+                               },{
+                                   :start => 0.0,
+                                   :end   => 80.0,
+                                   :width => 80.0
+                               })
+            v.should == 49900 # 80% of 9500-60000
             v.should be_an_instance_of Fixnum
         end
     end

@@ -36,6 +36,8 @@ module Crubyflie
         DEFAULT_INPUT_RANGE = "-32768:32767"
         # Default Crazyflie min/max angles in degrees
         DEFAULT_OUTPUT_RANGE = "-30:30"
+        # Default dead zone range
+        DEFAULT_DEAD_ZONE = "0:0"
         # Default configuration file
         DEFAULT_CONFIG_PATH = File.join(File.dirname(__FILE__), "..","..","..",
                                         "configs", "joystick_default.yaml")
@@ -87,12 +89,36 @@ module Crubyflie
                 end
 
                 axis[id] = action
+
+                # Parse and fill in ranging values
+                [[:input_range, DEFAULT_INPUT_RANGE],
+                 [:output_range, DEFAULT_OUTPUT_RANGE],
+                 [:dead_zone, DEFAULT_DEAD_ZONE]].each do |id, default|
+                    range_s = axis_cfg[id] || default
+                    start, rend = range_s.split(':')
+                    start = start.to_i; rend = rend.to_i
+                    range = {
+                        :start => start.to_f,
+                        :end => rend.to_f,
+                        :width => (Range.new(start,rend).to_a.size() - 1).to_f
+                    }
+                    axis_cfg[id] = range
+                end
+
+                # output value max jump per second. We covert to rate/ms
+                max_chrate = axis_cfg[:max_change_rate] || 10000
+                axis_cfg[:max_change_rate] = max_chrate.to_f / 1000
+
+                axis_cfg[:last_poll] ||= 0
+                axis_cfg[:last_value] ||= 0
+                axis_cfg[:invert] ||= false
+                axis_cfg[:calibration] ||= 0
+
             end
 
             buttons = {}
-            if config_h[:buttons].nil?
-                raise JoystickException.new("No buttons section")
-            end
+            config_h[:buttons] = buttons if config_h[:buttons].nil?
+
             config_h[:buttons].each do |id, button_cfg|
                 action = button_cfg[:action]
                 if action.nil?
@@ -141,44 +167,37 @@ module Crubyflie
             return 0 if axis_conf.nil?
             is_thrust = axis_conf[:action] == :thrust
 
+            last_poll = axis_conf[:last_poll]
+            last_value = axis_conf[:last_value]
+            invert = axis_conf[:invert]
+            calibration = axis_conf[:calibration]
 
-            last_poll = axis_conf[:last_poll] || 0
-            last_value = axis_conf[:last_value] || 0
-            invert = axis_conf[:invert] || false
-            calibration = axis_conf[:calibration] || 0
+            input_range = axis_conf[:input_range]
+            output_range = axis_conf[:output_range]
 
-            input_range_s = axis_conf[:input_range] || DEFAULT_INPUT_RANGE
-            ir_start, ir_end = input_range_s.split(':')
-            input_range = Range.new(ir_start.to_i, ir_end.to_i)
+            max_chrate = axis_conf[:max_change_rate]
 
-            output_range_s = axis_conf[:output_range] || DEFAULT_OUTPUT_RANGE
-            or_start, or_end = output_range_s.split(':')
-            output_range = Range.new(or_start.to_i, or_end.to_i)
-
-            # output value max jump per second. We covert to rate/ms
-            max_chrate = axis_conf[:max_change_rate] || 10000
-            max_chrate = max_chrate.to_f / 1000
-
-            dead_zone = axis_conf[:dead_zone] || "0:0" # % deadzone around 0
-            dz_start, dz_end = dead_zone.split(':')
-            dead_zone_range = Range.new(dz_start.to_i, dz_end.to_i)
+            dead_zone = axis_conf[:dead_zone]
 
             value = @joystick.axis(axis_id)
+
             value *= -1 if invert
             value += calibration
 
-            # Make sure input falls with the expected range
-            if value > input_range.last then value = input_range.last end
-            if value < input_range.first then value = input_range.first end
-            # Dead zone
 
-            if dead_zone_range.first < value && dead_zone_range.last > value
+            # Make sure input falls with the expected range and take care of
+            # the dead zone
+            if dead_zone[:start] < value && dead_zone[:end] > value
                 value = 0
+            elsif value > input_range[:end]
+                value = input_range[:end]
+            elsif value < input_range[:start]
+                value = input_range[:start]
             end
+
             # Convert
             if is_thrust
-                value = pre_normalize_thrust(value, input_range, output_range)
-                value = normalize_thrust(value)
+                value = normalize_thrust(value, input_range, output_range)
             else
                 value = normalize(value, input_range, output_range)
             end
@@ -210,24 +229,34 @@ module Crubyflie
             return value
         end
 
-        # The thrust axis is disabled for values < 0. What we do here is to
-        # convert it to a thrust 0-100% value first and then make sure it
-        # stays within the limits provided for output range
-        def pre_normalize_thrust(value, input_range, output_range)
-            value = normalize(value, input_range, (-100..100))
-            value = 0 if value < 0
-            if value > output_range.last then value = output_range.last
-            elsif value < output_range.first then value = output_range.first
-            end
-            return value
-        end
-        private :pre_normalize_thrust
 
-
-        # Returns integer from 10.000 to 60.000 which is what the crazyflie
+        # Returns integer from 9.500 to 60.000 which is what the crazyflie
         # expects
-        def normalize_thrust(value)
-            return normalize(value, (0..100), (9500..60000)).round
+        def normalize_thrust(value, input_range, output_range)
+            value = 0 if value < 0
+            range = {
+                :start => -100.0,
+                :end => 100.0,
+                :width => 200.0
+            }
+            value = normalize(value, input_range, range)
+
+            if value > output_range[:end] then value = output_range[:end]
+            elsif value < output_range[:start] then value = output_range[:start]
+            end
+
+            range = {
+                :start => 0.0,
+                :end => 100.0,
+                :width => 100.0
+            }
+
+            cf_range = {
+                :start => 9500.0,
+                :end => 60000.0,
+                :width => 50500.0
+            }
+            return normalize(value, range, cf_range).round
         end
         private :normalize_thrust
 
@@ -263,15 +292,16 @@ module Crubyflie
 
         # Linear-transforms a value in one range to a different range
         # @param value [Fixnum, Float] the value in the original range
-        # @param from_range [Range] the range from which we want to normalize
-        # @param to_range [Range] the destination range
+        # @param from_range [Hash] the range from which we want to normalize.
+        #                          a range must have :start, :end, :width keys
+        # @param to_range [Hash] the destination range
         # @return [Float] the linear-corresponding value in the destination
         #                 range
         def normalize(value, from_range, to_range)
-            from_w = from_range.to_a.size.to_f - 1
-            to_w = to_range.to_a.size.to_f - 1
-            from_min = from_range.first.to_f
-            to_min = to_range.first.to_f
+            from_min = from_range[:start]
+            to_min = to_range[:start]
+            to_w = to_range[:width]
+            from_w = from_range[:width]
             # puts "#{to_min}+(#{value.to_f}-#{from_min})*(#{to_w}/#{from_w})
             r = to_min + (value.to_f - from_min) * (to_w / from_w)
             return r.round(3)

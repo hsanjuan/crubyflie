@@ -147,7 +147,7 @@ module Crubyflie
 
             if pitch && roll && yaw && thrust
                 m = "Sending R: #{roll} P: #{pitch} Y: #{yaw} T: #{thrust}"
-                #logger.debug(m)
+                logger.debug(m)
                 crazyflie.commander.send_setpoint(roll, pitch, yaw, thrust,
                                                   @xmode)
             end
