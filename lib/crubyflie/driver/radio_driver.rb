@@ -220,7 +220,7 @@ module Crubyflie
         # @todo why the heck do we care here if we need to wait? Should the
         # crazyradio do the waiting?
         def start_radio_thread
-            @radio_thread = Thread.new do |thr|
+            @radio_thread = Thread.new do
                 Thread.current.priority = 5
                 out_data = [0xFF]
                 retries = @retries_before_disconnect
