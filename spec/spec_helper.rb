@@ -17,6 +17,7 @@
 # along with Crubyflie.  If not, see <http://www.gnu.org/licenses/>
 
 require 'simplecov'
+require 'coveralls'
 SimpleCov.at_exit do
     SimpleCov.minimum_coverage 95
     SimpleCov.result.format!
