@@ -285,7 +285,7 @@ module Crubyflie
                         sleep 0.2
                     else
                         logger.debug("Log on #{packet.channel}. Cannot handle")
-                        ## @in_queue << packet
+                        ## in_queue << packet
                     end
                 end
             end
