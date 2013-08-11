@@ -50,7 +50,7 @@ if uris.empty?
     exit 1
 end
 logger.info("Found copters at: #{uris}")
-if uri = opts[:cf_uri] && !uris.include(opts[:cf_uri])
+if uri = opts[:cf_uri] && !uris.include?(opts[:cf_uri])
     logger.error("Provided URI not found")
     exit 1
 end
