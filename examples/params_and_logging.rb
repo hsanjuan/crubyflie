@@ -1,14 +1,17 @@
 #!/usr/bin/env ruby
 
 # Require the Crubyflie gem
-require_relative '../lib/crubyflie'
+require 'crubyflie'
 include Crubyflie # easy to use things in namespace
 
 # Create a new Crazyflie with cache folder "cache"
 cf = Crazyflie.new('cache')
 # Before opening any link, scan for interfaces
 ifaces = cf.scan_interface
-exit 1 if ifaces.empty?
+if ifaces.empty?
+    logger.error("No crazyflies found")
+    exit 1
+end
 logger.info("Found interfaces: #{ifaces}")
 
 # Open a link to the first interface
