@@ -7,6 +7,12 @@ Crubyflie is a Ruby rewrite of the [Crazyflie quadcopter](http://www.bitcraze.se
 
 The Crazyflie is awesome, but I did not know where to start contributing. Therefore I thought that rewriting the code in Ruby would be one way of knowing what is going on and how it works. Along the way I took the time to document all the code so that others can understand it and create tests.
 
+You may be also interested in some other unofficial Crazyflie clients:
+
+ * C++:     https://github.com/fairlight1337/libcflie
+ * Node.js: https://github.com/ceejbot/aerogel
+ * Haskell: https://github.com/orclev/crazyflie-haskell
+
 Disclaimer
 ----------
 
@@ -17,7 +23,8 @@ Features
 
  * Crubyflie can be used to fly a Crazyflie device using a Joystick and the Crazyradio USB dongle
  * Crubyflie exposes an API that allows to control the copter, read logging, parameters and console easily
- * Crubyflie runs headless
+ * Crubyflie runs headless  
+ * Lightweight: If you just want to fly, Crubyflie consumes around 1/2 memory and 1/3 CPU compared to the original Python `cfheadless` utility.
 
 Not included...
 ----------------
@@ -44,6 +51,16 @@ A template/default configuration file (which works for me and my PS3-like contro
 If you are wondering about your Joystick's axis IDs, ranges etc, you will find a `sdl-joystick-axis.rb` script under `tools` that lets you open a joystick and check what the SDL library can read from it. It might come handy.
 
 If you need help just open an issue or contact me.
+
+Raspberri Pi
+------------
+
+If you want to use Crubyflie in your Raspberry Pi you need to:
+
+    sudo apt-get install ruby ruby-dev libsdl-dev
+    sudo gem install crubyflie
+
+This should provide everything you need to run the `crubyflie` command. Of course you might need to put your user in the `input` group and modify `udev` rules as explained in the [Crazyflie wiki](http://wiki.bitcraze.se/projects:crazyflie:hacks:rasberrypi).
 
 Using the Crazyflie API
 -----------------------
