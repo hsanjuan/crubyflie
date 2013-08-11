@@ -72,11 +72,16 @@ Signal.trap("SIGINT") do
 end
 
 while cf.active? && !exit do
-    # We should be good sending 10 ticks per second
-    # it says that somewhere in the docs
+    start_time = Time.now.to_f
     joystick.read_input()
     joystick.apply_input(cf)
-    sleep 0.1
+    # We should be good sending 10 ticks per second,
+    # as it says that somewhere in the docs, so we have
+    # 1/10 secs of time per loop. If we are fast, we can sleep
+    # a little bit
+    consumed_time = Time.now.to_f - start_time
+    sleep_time = 0.1 - (consumed_time)
+    sleep sleep_time if sleep_time > 0
 end
 
 joystick.quit()
