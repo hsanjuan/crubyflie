@@ -1,0 +1,85 @@
+#!/usr/bin/env ruby
+
+# Copyright (C) 2013 Hector Sanjuan
+
+# This file is part of Crubyflie.
+
+# Crubyflie is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Crubyflie is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Crubyflie.  If not, see <http://www.gnu.org/licenses/>
+
+require 'crubyflie'
+require 'trollop'
+
+# This script allows to fly the Crazyflie usingi the Joystick controller
+# and initializing a Crazyflie. It might need a bit of cleanup but it does
+# the job.
+
+opts = Trollop::options do
+    opt(:joystick_id, "Joystick ID",
+        :type => :int,
+        :default => 0,
+        :short => '-j')
+    opt(:cf_uri, "Crazyflie URI (defaults to first one found in scan)",
+        :type => :string,
+        :short => '-f')
+    opt(:config, "Joystick configuration, defaults to default cfg in configs/",
+        :type => :string,
+        :default => Crubyflie::Joystick::DEFAULT_CONFIG_PATH,
+        :short => '-c')
+  end
+
+include Crubyflie
+# Uncomment to turn on debugging
+# $debug = true
+cf = Crazyflie.new('/tmp/crubyflie')
+
+# Before opening any link, scan for interfaces
+uris = cf.scan_interface
+if uris.empty?
+    logger.error("No crazyflies found")
+    exit 1
+end
+logger.info("Found copters at: #{uris}")
+if uri = opts[:cf_uri] && !uris.include(opts[:cf_uri])
+    logger.error("Provided URI not found")
+    exit 1
+end
+
+uri ||= uris.first
+
+# Open a link to the copter
+cf.open_link(uri)
+# Make sure everything is still good
+exit 1 if !cf.active?
+
+# Initialize the joystick - ID defaults to 0
+joystick = Joystick.new(opts[:config], opts[:joystick_id])
+joystick.init()
+
+exit = false
+Signal.trap("SIGINT") do
+    exit = true
+end
+
+while cf.active? && !exit do
+    # We should be good sending 10 ticks per second
+    # it says that somewhere in the docs
+    joystick.read_input()
+    joystick.apply_input(cf)
+    sleep 0.1
+end
+
+joystick.quit()
+cf.close_link()
+warn "\n"
+logger.info("Bye bye!")
