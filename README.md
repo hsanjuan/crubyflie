@@ -33,10 +33,19 @@ Not included...
  * No idea how this works in other OSs that are not Linux, but in theory it should work in all with some small fixes. I welcome you to take on this task if you are interested.
  * No support for Ruby <= 1.8.7 (maybe it works who knows... I haven't tested but since Crubyflie relies heavily on threading probably it does not work so good).
 
+Installation
+------------
+
+Crubyflie depends on `rubysdl`, for which you will need the SDL library and headers. Make sure you install `libsdl-dev` (Debian/Ubuntu), `libSDL-devel` (Opensuse) or whatever your distro calls it. Then:
+
+    gem install crubyflie
+
+That's all.
+
 Fyling the Crazyflie
 --------------------
 
-The easiest way to do it is to run the `crubyflie` command. This will connect to the first visible quadcopter using the first available joystick on your computer (you can modify this parameters with the appropiate flags):
+The easiest way to do it is to `gem install crubyflie` and then run the `crubyflie` command. This will connect to the first visible quadcopter using the first available joystick on your computer (you can modify this parameters with the appropiate flags):
 
     > crubyflie2.0 -h
     Options:
