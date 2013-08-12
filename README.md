@@ -61,7 +61,7 @@ If you are wondering about your Joystick's axis IDs, ranges etc, you will find a
 
 If you need help just open an issue or contact me.
 
-Raspberri Pi
+Raspberry Pi
 ------------
 
 If you want to use Crubyflie in your Raspberry Pi you need to:
