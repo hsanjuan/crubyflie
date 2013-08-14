@@ -73,6 +73,8 @@ Signal.trap("SIGINT") do
     exit = true
 end
 
+logger.info("Cleared for take-off!")
+
 while cf.active? && !exit do
     start_time = Time.now.to_f
     joystick.read_input()
