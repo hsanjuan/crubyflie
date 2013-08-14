@@ -55,7 +55,7 @@ The easiest way to do it is to `gem install crubyflie` and then run the `crubyfl
                                /usr/lib64/ruby/gems/2.0.0/gems/crubyflie-0.0.1/lib/crubyflie/input/../../../configs/joystick_default.yaml)
                  --help, -h:   Show this message
 
-A template/default configuration file (which works for me and my PS3-like controller :)) is provided with the gem (in the `configs/` folder). You should modify this file to fit it to your needs (configuration parameters are commented). The most tricky parameter in axis is the `:max_change_rate`. Depending on your controller, you will find the input is excessively throotled or not. I recommend that you play with this value.
+There is a [template/default configuration file](https://github.com/hsanjuan/crubyflie/blob/master/configs/joystick_default.yaml) with instructions (which works for me and my PS3-like controller :) ). You should modify this file to fit it to your needs (configuration parameters are commented). The most tricky parameter in axis is the `:max_change_rate`. Depending on your controller, you will find the input is excessively throotled or not. I recommend that you play with this value.
 
 If you are wondering about your Joystick's axis IDs, ranges etc, you will find a `sdl-joystick-axis.rb` script under `tools` that lets you open a joystick and check what the SDL library can read from it. It might come handy.
 
