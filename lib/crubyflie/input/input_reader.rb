@@ -38,6 +38,7 @@ module Crubyflie
         INPUT_ACTIONS = [:roll, :pitch, :yaw, :thrust,
                          :roll_inc_cal, :roll_dec_cal,
                          :pitch_inc_cal, :pitch_dec_cal,
+                         :switch_scaled_output_mode,
                          :switch_xmode,  :close_link]
 
         attr_reader :axis, :buttons, :axis_readings, :button_readings
@@ -54,6 +55,7 @@ module Crubyflie
             @buttons = buttons
             @calibrations = {}
             @xmode = false
+            @output_scale = 0 # off
 
             # Calibrate defaults to 0
             INPUT_ACTIONS.each do |action|
@@ -72,12 +74,20 @@ module Crubyflie
             poll() # In case we need to poll the device
             actions_to_axis = @axis.invert()
             actions_to_axis.each do |action, axis_id|
+                if !INPUT_ACTIONS.include?(action)
+                    logger.error("Unknown action #{action}. Skipping")
+                    next
+                end
                 @axis_readings[action] = read_axis(axis_id)
                 @axis_readings[action] += @calibrations[action]
             end
 
             actions_to_buttons = @buttons.invert()
             actions_to_buttons.each do |action, button_id|
+                if !INPUT_ACTIONS.include?(action)
+                    logger.error("Unknown action #{action}. Skipping")
+                    next
+                end
                 @button_readings[action] = read_button(button_id)
                 @button_readings[action] += @calibrations[action]
             end
@@ -119,6 +129,14 @@ module Crubyflie
                 when :switch_xmode
                     @xmode = !@xmode if value > 0
                     logger.info("Xmode is #{@xmode}") if value > 0
+                when :switch_scaled_output_mode
+                    if value > 0 && @output_scale == 0
+                        logger.info("Scaling output: x#{value}")
+                        @output_scale = value.to_f
+                    elsif value > 0 && @output_scale > 0
+                        logger.info("Scaling output disabled")
+                        @output_scale = 0
+                    end
                 when :close_link
                     crazyflie.close_link() if value > 0
                 end
@@ -138,6 +156,11 @@ module Crubyflie
                     setpoint[:thrust] = value
                 end
             end
+
+            setpoint.keys().each do |k|
+                next if k == :thrust
+                setpoint[k] *= @output_scale
+            end if @output_scale > 0
 
             pitch  = setpoint[:pitch]
             roll   = setpoint[:roll]

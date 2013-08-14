@@ -233,7 +233,7 @@ describe Joystick do
             expect(@sdl_joystick).to receive(:axis).with(8).and_return(140)
             @joystick.read_configuration('baa')
             value = @joystick.read_axis(8)
-            value.should == 34749.5
+            value.should == 34497.5
         end
 
         it "should not throotle the change rate when increasing thrust" do
@@ -317,7 +317,7 @@ describe Joystick do
         it "should return -1 when not pressed" do
             expect(@sdl_joystick).to receive(:button).and_return(false)
             v = @joystick.send(:read_button, 0)
-            v.should == -1
+            v.should == 0
         end
     end
 end

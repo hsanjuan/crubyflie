@@ -1,5 +1,58 @@
-# Default joystick configuration file. It mimics the PS3_Mode2 original
-# configuration file
+# Default joystick configuration file. A file looks like:
+# --------------------------------------------------------------------------
+# :type: Joystick
+# :axis:
+#   <axis_id>:
+#     :action: <action>
+#     :description: A short description to remember what this is
+#     :input_range: "<start>:<end>"
+#                   The range read from the joystick.
+#                   Defaults to -32768:32767 which is SDL-dependant
+#
+#     :output_range: "<start>:<end>"
+#                    The values we should yield to
+#                    the Crazyflie, normally degrees (roll, pitch...). For
+#                    thrust it is expressed in % of thrust
+#
+#     :max_change_rate: <number>
+#                       The output_range change rate per second. Must
+#                       e a number. Defaults to 10000 (so a lot). For thrust
+#                       it is expressed in % of thrust
+#     :dead_zone: "<start>:<end>"
+#                 The dead range around 0. Defaults to 0:0
+#
+#     :invert: true|false  - Invert this axis
+#
+#     :calibration: <number>
+#                   This value is added to the raw joystick reading
+#
+#   <axis_id2>: ...
+#
+# :buttons:
+#   <button_id>:
+#     :action: <action>
+#     :value: <value when pressed>
+#             A number, optional, defaults to 1.
+#
+#   <button_id2>: ...
+#
+# --------------------------------------------------------------------------
+# Valid actions:
+# :roll - Controls roll. Assignable a axis or a button with value tag.
+# :pitch - Controls pitch. Assignable a axis or a button with value tag.
+# :thrust - Controls thrust. Assignable a axis or a button with value tag.
+# :yaw - Controls yaw. Assignable a axis or a button with value tag.
+# :switch_xmode - Enables/disables xmode. Assignable to a button.
+# :close_link - Kills the link and shuts Crubyflie. Assignable to a button.
+# :switch_scaled_output_mode - Enables/disabled scaled output mode. Assignable
+#                              to a button with value tag (the multiplier)
+# :roll_inc_cal, :roll_dec_cal - Increase/decrease calibration for :roll axis.
+#                                Assignable to a button with optional value.
+#
+# :pitch_inc_cal, :pitch_dec_cal - Increase/decrease calibration for :pitch
+#                                  axis. Assignable to a button with optional
+#                                  value.
+# ---------------------------------------------------------------------------
 :type: "Joystick"
 :axis:
   0:
@@ -24,7 +77,7 @@
     :description: "Yaw Axis"
     :action: :yaw
     :input_range: "-32768:32767"
-    :output_range: "-200:200"
+    :output_range: "-150:150"
     :max_change_rate: 800
     :dead_zone: "-1000:1000"
     :invert: false
@@ -33,11 +86,11 @@
     :description: "Thrust axis"
     :action: :thrust
     :input_range: "-32768:32767"
-    :output_range: "0:80" # Exception: Min/max thrust output is represented in 0-100%!
-    # Max change rate per second when lowering thrust. Note that this
-    # is a change ranging between ranges 9500 and 60000
-    :max_change_rate: 40000
-    :dead_zone: "-100:100" # Deadzone, within input range
+    # Exception: Min/max thrust output is represented in 0-100%!
+    :output_range: "0:80"
+    # Max change rate per second when lowering thrust in % of thrust
+    :max_change_rate: 70
+    :dead_zone: "-100:100"
     :invert: true
     :calibration: 0
 
@@ -46,3 +99,8 @@
     :action: :switch_xmode
   1:
     :action: :close_link
+  4:
+    # When enabled, this mode will will multiply axis readings (except thrust)
+    # by the value of the button (must be a positive number)
+    :action: :switch_scaled_output_mode
+    :value: 0.50 # Softer output, useful for landing

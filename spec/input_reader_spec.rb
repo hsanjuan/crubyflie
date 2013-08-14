@@ -56,8 +56,8 @@ describe InputReader do
             }
 
             @joystick.button_readings.should == {
-                :switch_xmode => -1,
-                :close_link => -1
+                :switch_xmode => 0,
+                :close_link => 0
             }
         end
     end

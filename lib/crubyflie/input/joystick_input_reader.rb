@@ -41,6 +41,8 @@ module Crubyflie
         # Default configuration file
         DEFAULT_CONFIG_PATH = File.join(File.dirname(__FILE__), "..","..","..",
                                         "configs", "joystick_default.yaml")
+        THRUST_MAX = 60000
+        THRUST_MIN = 9500
 
         attr_reader :config, :joystick_index
         # Initializes the Joystick configuration and the SDL library
@@ -107,7 +109,14 @@ module Crubyflie
 
                 # output value max jump per second. We covert to rate/ms
                 max_chrate = axis_cfg[:max_change_rate] || 10000
-                axis_cfg[:max_change_rate] = max_chrate.to_f / 1000
+                if action == :thrust
+                    # Thrust expressed in %
+                    w = THRUST_MAX - THRUST_MIN
+                    max_chrate = (max_chrate.to_f * w /100) / 1000
+                else
+                    max_chrate = max_chrate.to_f / 1000
+                end
+                axis_cfg[:max_change_rate] = max_chrate
 
                 axis_cfg[:last_poll] ||= 0
                 axis_cfg[:last_value] ||= 0
@@ -117,7 +126,7 @@ module Crubyflie
             end
 
             buttons = {}
-            config_h[:buttons] = buttons if config_h[:buttons].nil?
+            config_h[:buttons] = {} if config_h[:buttons].nil?
 
             config_h[:buttons].each do |id, button_cfg|
                 action = button_cfg[:action]
@@ -125,6 +134,7 @@ module Crubyflie
                     raise JoystickException.new("Button #{id} needs an action")
                 end
                 buttons[id] = action
+                button_cfg[:value] ||= 1
             end
 
             @config = config_h
@@ -189,7 +199,13 @@ module Crubyflie
             # the dead zone
             if dead_zone[:start] < value && dead_zone[:end] > value
                 value = 0
-            elsif value > input_range[:end]
+            elsif dead_zone[:start] >= value
+                value = value - dead_zone[:start]
+            elsif dead_zone[:end] <= value
+                value = value - dead_zone[:end]
+            end
+
+            if value > input_range[:end]
                 value = input_range[:end]
             elsif value < input_range[:start]
                 value = input_range[:start]
@@ -206,7 +222,7 @@ module Crubyflie
             current_time = Time.now.to_f
             timespan = current_time - last_poll
             # How many ms have passed since last time
-            timespan_ms = timespan.round(3) * 1000
+            timespan_ms = timespan * 1000
             # How much have we changed/ms
             change = (value - last_value) / timespan_ms.to_f
 
@@ -252,9 +268,9 @@ module Crubyflie
             }
 
             cf_range = {
-                :start => 9500.0,
-                :end => 60000.0,
-                :width => 50500.0
+                :start => THRUST_MIN,
+                :end => THRUST_MAX,
+                :width => THRUST_MAX - THRUST_MIN
             }
             return normalize(value, range, cf_range).round
         end
@@ -269,17 +285,19 @@ module Crubyflie
         def read_button(button_id)
             return -1 if !@joystick
 
-            last_poll = @config[:buttons][button_id][:last_poll] || 0
-            last_value = @config[:buttons][button_id][:last_value] || -1
-            value = @joystick.button(button_id) ? 1 : -1
+            button = @config[:buttons][button_id]
+            last_poll = button[:last_poll] || 0
+            last_value = button[:last_value] || -1
+            pressed = @joystick.button(button_id)
+            value_pressed = button[:value]
             current_time = Time.now.to_f
 
             if (current_time - last_poll) > 0.5
-                @config[:buttons][button_id][:last_value] = value
-                @config[:buttons][button_id][:last_poll] = current_time
-                return value
+                button[:last_value] = value_pressed
+                button[:last_poll] = current_time
+                return pressed ? value_pressed : 0
             else
-                return -1
+                return 0
             end
         end
         private :read_button
@@ -304,7 +322,7 @@ module Crubyflie
             from_w = from_range[:width]
             # puts "#{to_min}+(#{value.to_f}-#{from_min})*(#{to_w}/#{from_w})
             r = to_min + (value.to_f - from_min) * (to_w / from_w)
-            return r.round(3)
+            return r.round(2)
         end
     end
 end
