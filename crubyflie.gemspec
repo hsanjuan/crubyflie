@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
 Client library to control a Crazyflie. This library allows to talk to a
 crazyflie using the USB radio dongle.
 EOF
-    spec.summary       = "Crazyflie ruby client"
+    spec.summary       = "A Ruby client for the Crazyflie quadcopter"
     spec.homepage      = "https://github.com/hsanjuan/crubyflie"
     spec.license       = "GPLv3"
 
