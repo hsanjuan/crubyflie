@@ -36,11 +36,13 @@ opts = Trollop::options do
         :type => :string,
         :default => Crubyflie::Joystick::DEFAULT_CONFIG_PATH,
         :short => '-c')
-  end
+    opt(:debug, "Enable debug messages",
+        :short => '-d')
+end
 
 include Crubyflie
-# Uncomment to turn on debugging
-# $debug = true
+$debug = true if opts[:debug]
+
 cf = Crazyflie.new('/tmp/crubyflie')
 
 # Before opening any link, scan for interfaces
