@@ -80,7 +80,7 @@ while cf.active? && !exit do
     # 1/10 secs of time per loop. If we are fast, we can sleep
     # a little bit
     consumed_time = Time.now.to_f - start_time
-    sleep_time = 0.1 - (consumed_time)
+    sleep_time = 0.1 - consumed_time
     sleep sleep_time if sleep_time > 0
 end
 

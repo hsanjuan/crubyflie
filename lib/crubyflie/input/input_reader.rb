@@ -30,8 +30,8 @@ module Crubyflie
     #
     # The InputReader will also apply the #INPUT_ACTIONS to a given
     # Crazyflie. In order to do that it will go through all the
-    # read values and perform actioins associated to them, like sending
-    # a setpoint or shutting down the connection or altering the calibration.
+    # read values and perform actions associated to them, like sending
+    # a setpoint, shutting down the connection or altering the calibration.
     class InputReader
 
         # List of current recognized actions that controllers can declare
@@ -42,13 +42,12 @@ module Crubyflie
 
         attr_reader :axis, :buttons, :axis_readings, :button_readings
         attr_accessor :xmode
-        # An input is composed by several necessary axis, buttons and
-        # calibrations.
+        # An input is composed by several necessary axis and buttons.
         # @param axis [Hash] A hash of keys identifying axis IDs
         #                    (the controller should know to what the
-        #                     ID maps, and values from #INPUT_ACTIONS
+        #                     ID maps), and values from #INPUT_ACTIONS
         # @param buttons [Hash] A hash of keys identifying button IDs (the
-        #                    controller should know to what the ID maps,
+        #                    controller should know to what the ID maps),
         #                    and values from #INPUT_ACTIONS
         def initialize(axis, buttons)
             @axis = axis
@@ -86,7 +85,7 @@ module Crubyflie
 
         # This will act on current axis readings (by sendint a setpoint to
         # the crazyflie) and on button readings (by, for example, shutting
-        # down the link or modifying the calibrations.
+        # down the link or modifying the calibrations).
         # If the link to the crazyflie is down, it will not send anything.
         # @param crazyflie [Crazyflie] A crazyflie instance to send the
         #                              setpoint to.
