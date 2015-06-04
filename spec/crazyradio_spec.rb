@@ -79,7 +79,7 @@ describe Crazyradio do
 
     describe "#has_fw_scan" do
         it "should say false" do
-            @crazyradio.has_fw_scan.should be(false)
+            @crazyradio.has_fw_scan.should be(nil)
         end
     end
 
