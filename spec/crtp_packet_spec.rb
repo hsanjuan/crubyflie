@@ -57,14 +57,14 @@ describe CRTPPacket do
 
     describe "#unpack" do
         it "should return an empty package if data is empty or not array" do
-            CRTPPacket.unpack("abc").pack.should == [0]
-            CRTPPacket.unpack([]).pack.should == [0]
+            CRTPPacket.unpack("abc").pack.should == [0b00001100]
+            CRTPPacket.unpack([]).pack.should == [0b00001100]
         end
 
         it "should unpack a data array correctly into header and data" do
             packet = CRTPPacket.unpack([1,2,3])
             packet.data.should == [2,3]
-            packet.header.should == 1
+            packet.header.should == 0b00000001
         end
     end
 
@@ -73,7 +73,7 @@ describe CRTPPacket do
             header = 0b11101010 # channel 10; port 1110
             payload = [1,2,3]
             packet = CRTPPacket.new(header, payload)
-            packet.pack.should == [0b11101010, 1, 2, 3]
+            packet.pack.should == [0b11101110, 1, 2, 3]
         end
     end
 end

@@ -29,12 +29,12 @@ module Crubyflie
     # Small URI class since Ruby URI < 1.9.3 gives problems parsing
     # Crazyflie URIs
     class CrubyflieURI
-        attr_reader :scheme, :dongle, :channel, :rate
+        attr_reader :scheme, :dongle, :channel, :rate, :address
         # Initialize an URI
         # @param uri_str [String] the URI
         def initialize(uri_str)
             @uri_str = uri_str
-            @scheme, @dongle, @channel, @rate = split()
+            @scheme, @dongle, @channel, @rate, @address = split()
             if @scheme.nil? || @dongle.nil? || @channel.nil? || @rate.nil? ||
                     @scheme != 'radio'
                 raise InvalidURIException.new('Bad URI')
@@ -110,6 +110,19 @@ module Crubyflie
             dongle_number = @uri.dongle.to_i
             channel = @uri.channel.to_i
             rate = @uri.rate
+            address = @uri.address
+
+            if address
+                begin
+                    # The official driver does this. Takes address as decimal
+                    # number, calculate the binary and pack it as 5 byte.
+                    hex_addr = address.to_i.to_s(16)
+                    bin_addr = hex_addr.scan(/../).map { |x| x.hex }.pack('C*')
+                    address = bin_addr.unpack('CCCCC')
+                rescue
+                    raise InvalidURIException.new("Address not valid: #{$!.message}")
+                end
+            end
 
             # @todo this should be taken care of in crazyradio
             case rate
@@ -140,7 +153,8 @@ module Crubyflie
             # Initialize Crazyradio and run thread
             cradio_opts = {
                 :channel => channel,
-                :data_rate => rate
+                :data_rate => rate,
+                :address => address
             }
             @crazyradio = Crazyradio.factory(cradio_opts)
             start_radio_thread()

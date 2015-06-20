@@ -26,6 +26,7 @@ module Crubyflie
             :console => 0x00,
             :param => 0x02,
             :commander => 0x03,
+            :mem => 0x04,
             :logging => 0x05,
             :debugdriver => 0x0E,
             :linkctrl => 0x0F,
@@ -134,7 +135,10 @@ module Crubyflie
         # Concat the header and the data and return it
         # @return [Array] header concatenated with data
         def pack
-            [@header].concat(@data)
+            # According to official client, bytes 3 and 4 need
+            # to be set for legacy support of the bootloader
+            # (no matter what)
+            [@header | 0x3 << 2].concat(@data)
         end
 
         # Pack the data of the packet into unsigned chars when needed
