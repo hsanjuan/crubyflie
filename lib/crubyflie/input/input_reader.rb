@@ -39,7 +39,7 @@ module Crubyflie
                          :roll_inc_cal, :roll_dec_cal,
                          :pitch_inc_cal, :pitch_dec_cal,
                          :switch_scaled_output_mode,
-                         :switch_xmode,  :close_link]
+                         :switch_xmode, :hover, :close_link]
 
         attr_reader :axis, :buttons, :axis_readings, :button_readings
         attr_accessor :xmode
@@ -55,6 +55,7 @@ module Crubyflie
             @buttons = buttons
             @calibrations = {}
             @xmode = false
+            @hover = false
             @output_scale = 0 # off
 
             # Calibrate defaults to 0
@@ -105,8 +106,11 @@ module Crubyflie
                 :roll => nil,
                 :pitch => nil,
                 :yaw => nil,
-                :thrust => nil
+                :thrust => nil,
+                :hover => 0
             }
+
+            set_althold = false
 
             @button_readings.each do |action, value|
                 case action
@@ -118,6 +122,12 @@ module Crubyflie
                     setpoint[:yaw] = value
                 when :thrust
                     setpoint[:thrust] = value
+                when :hover
+                    if value > 0
+                        @hover = !@hover
+                        logger.info("Hover is #{@hover}")
+                        set_althold = true
+                    end
                 when :roll_inc_cal
                     @calibrations[:roll] += 1
                 when :roll_dec_cal
@@ -172,6 +182,9 @@ module Crubyflie
                 logger.debug(m)
                 crazyflie.commander.send_setpoint(roll, pitch, yaw, thrust,
                                                   @xmode)
+            end
+            if set_althold
+                crazyflie.param.set_value('flightmode.althold', @hover ? 1 : 0)
             end
         end
 

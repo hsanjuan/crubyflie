@@ -42,6 +42,7 @@
 # :pitch - Controls pitch. Assignable a axis or a button with value tag.
 # :thrust - Controls thrust. Assignable a axis or a button with value tag.
 # :yaw - Controls yaw. Assignable a axis or a button with value tag.
+# :hover - Enables/disables hovering mode
 # :switch_xmode - Enables/disables xmode. Assignable to a button.
 # :close_link - Kills the link and shuts Crubyflie. Assignable to a button.
 # :switch_scaled_output_mode - Enables/disabled scaled output mode. Assignable
@@ -104,3 +105,5 @@
     # by the value of the button (must be a positive number)
     :action: :switch_scaled_output_mode
     :value: 0.50 # Softer output, useful for landing
+  5:
+    :action: :hover

@@ -67,7 +67,7 @@ module Crubyflie
         # Default size for the outgoing queue
         OUT_QUEUE_MAX_SIZE = 50
         # Default number of retries before disconnecting
-        RETRIES_BEFORE_DISCONNECT = 20
+        RETRIES_BEFORE_DISCONNECT = 10
 
         attr_reader :uri
         attr_reader :retries_before_disconnect, :out_queue_max_size

@@ -1,11 +1,11 @@
-Crubyflie - A Ruby client for Crazyflie
-=======================================
+Crubyflie - A Ruby client for Crazyflie 1
+=========================================
 
-[![Build Status](https://travis-ci.org/hsanjuan/crubyflie.png?branch=master)](https://travis-ci.org/hsanjuan/crubyflie) [![Coverage Status](https://coveralls.io/repos/hsanjuan/crubyflie/badge.png)](https://coveralls.io/r/hsanjuan/crubyflie)
+[![Gem Version](https://badge.fury.io/rb/crubyflie.svg)](http://badge.fury.io/rb/crubyflie) [![Build Status](https://travis-ci.org/hsanjuan/crubyflie.png?branch=master)](https://travis-ci.org/hsanjuan/crubyflie) [![Coverage Status](https://coveralls.io/repos/hsanjuan/crubyflie/badge.png)](https://coveralls.io/r/hsanjuan/crubyflie)
 
-Crubyflie is a Ruby rewrite of the [Crazyflie quadcopter](http://www.bitcraze.se/category/crazyflie/) Python [client libraries](https://bitbucket.org/bitcraze/crazyflie-pc-client), with some customizations.
+Crubyflie is a Ruby rewrite of the [Crazyflie 1.0 quadcopter](http://www.bitcraze.se/category/crazyflie/) Python [client libraries](https://github.com/bitcraze/crazyflie-clients-python), with some customizations.
 
-The Crazyflie is awesome, but I did not know where to start contributing. Therefore I thought that rewriting the code in Ruby would be one way of knowing what is going on and how it works. Along the way I took the time to document all the code so that others can understand it and create tests.
+The Crazyflie is awesome, but I did not know where to start contributing. Therefore I thought that rewriting the code in Ruby would be one way of knowing what is going on and how it works. Along the way I took the time to document all the code so that others can understand it.
 
 You may be also interested in some other unofficial Crazyflie clients:
 
@@ -13,25 +13,22 @@ You may be also interested in some other unofficial Crazyflie clients:
  * Node.js: https://github.com/ceejbot/aerogel
  * Haskell: https://github.com/orclev/crazyflie-haskell
 
-Disclaimer
-----------
-
-Crubyflie is in early stage of development, very untested.
-
 Features
 --------
 
  * Crubyflie can be used to fly a Crazyflie device using a Joystick and the Crazyradio USB dongle
  * Crubyflie exposes an API that allows to control the copter, read logging, parameters and console easily
- * Crubyflie runs headless  
+ * Crubyflie runs headless
  * Lightweight: If you just want to fly, Crubyflie consumes around 1/2 memory and 1/3 CPU compared to the original Python `cfheadless` utility.
+ * Hovering mode (see requirements below)
 
-Not included...
-----------------
- * No fancy UI.
- * No flash utility (yet?).
- * No idea how this works in other OSs that are not Linux, but in theory it should work in all with some small fixes. I welcome you to take on this task if you are interested.
- * No support for Ruby <= 1.8.7 (maybe it works who knows... I haven't tested but since Crubyflie relies heavily on threading probably it does not work so good).
+Requirements
+------------
+
+Crubyflie versions `>= 0.2.0` support hovering mode and are compatible with the latest firmware of `Crazyradio` ([Version 0.53](https://github.com/bitcraze/crazyradio-firmware/releases/tag/0.53)) and `Crazyflie` ([Version 2015.1](https://github.com/bitcraze/crazyflie-firmware/releases/tag/2015.1))
+
+Old versions should probably work, otherwise you can try with the `0.1.3` gem version.
+
 
 Installation
 ------------
@@ -42,12 +39,12 @@ Crubyflie depends on `rubysdl`, for which you will need the SDL library and head
 
 That's all.
 
-Fyling the Crazyflie
+Flying the Crazyflie
 --------------------
 
 The easiest way to do it is to `gem install crubyflie` and then run the `crubyflie` command. This will connect to the first visible quadcopter using the first available joystick on your computer (you can modify this parameters with the appropiate flags):
 
-    > crubyflie2.0 -h
+    > crubyflie -h
     Options:
       --joystick-id, -j <i>:   Joystick ID (default: 0)
            --cf-uri, -f <s>:   Crazyflie URI (defaults to first one found in scan)
@@ -96,15 +93,15 @@ end
 
 
 # Interface to the param facility
-@cf.param.get_value(...) do |value|
+@cf.param.get_value('param1.name') do |value|
   ...
 end
 
-@cf.param.get_value(...) do |value|
+@cf.param.get_value('param2.name') do |value|
   ...
 end
 
-@cf.param.set_value(...)
+@cf.param.set_value('param.name', 1)
 
 # Interface to the commander facility
 @cf.commander.send_setpoint(...)
@@ -115,10 +112,11 @@ end
 end
 ```
 
-That's pretty much all. As you see, instead of declaring callbacks, registering them etc. We let the user pass blocks, which are run when the data is available. 
+That's pretty much all. As you see, instead of declaring callbacks, registering them etc. We let the user pass blocks, which are run when the data is available.
+
 In Crubyflie, params are read and set synchronously, while the block passed to `start_logging()` will be called repeteadly and asynchrnously until `stop_logging()` is invoked. Console offers both synchronous `read()` and asynchronous `start_reading()` options.
 
-There are some examples in the `examples` folder. Read the gem documentation to get full information of the parameters for each function call.
+**There are some examples in the `examples` folder**. Read the gem documentation to get full information of the parameters for each function call.
 
 
 Contributing

@@ -106,7 +106,7 @@ module Crubyflie
                 sleep 0.5 # Allow setup and failures
                 setup_connection() if @link
             rescue Exception
-                #logger.warn $!.backtrace.join("\n")
+                # logger.warn $!.backtrace.join("\n")
                 call_cb(:connection_failed, $!.message)
                 close_link()
             end

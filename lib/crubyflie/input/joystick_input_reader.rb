@@ -43,6 +43,7 @@ module Crubyflie
                                         "configs", "joystick_default.yaml")
         THRUST_MAX = 60000
         THRUST_MIN = 9500
+        THRUST_IDLE = 32767 # for hovering
 
         attr_reader :config, :joystick_index
         # Initializes the Joystick configuration and the SDL library
@@ -226,8 +227,12 @@ module Crubyflie
             # How much have we changed/ms
             change = (value - last_value) / timespan_ms.to_f
 
-            # Skip rate limitation if change is positive and this is thurst
-            if !is_thrust || (is_thrust && change <= 0)
+            # Rate limitation applies to all inputs except thrust
+            # Thrust is only affected when no hovering and decreasing
+            # except thrust+hovering
+            # and thrust increase (needs to be quick)
+            if !is_thrust ||
+                    (is_thrust && !@hover && change <= 0)
                 # If the change rate exceeds  the max change rate per ms...
                 if change.abs > max_chrate
                     # new value is the max change possible for the timespan
@@ -249,7 +254,16 @@ module Crubyflie
         # Returns integer from 9.500 to 60.000 which is what the crazyflie
         # expects
         def normalize_thrust(value, input_range, output_range)
-            value = 0 if value < 0
+            # Yes, we now can have negative values for althold mode
+            value = 0 if value < 0 if !@hover
+            if @hover && value == 0
+                return THRUST_IDLE
+            end
+            # in any other case,
+            # first normalize to -100->100
+            # and then if not @hovering, put the value in users
+            # output-range (which is 0 to 100%). Finally,
+            # normalize to Crazyflie THRUST_MIN -> MAX
             range = {
                 :start => -100.0,
                 :end => 100.0,
@@ -257,15 +271,17 @@ module Crubyflie
             }
             value = normalize(value, input_range, range)
 
-            if value > output_range[:end] then value = output_range[:end]
-            elsif value < output_range[:start] then value = output_range[:start]
-            end
+            if !@hover
+                if value > output_range[:end] then value = output_range[:end]
+                elsif value < output_range[:start] then value = output_range[:start]
+                end
 
-            range = {
-                :start => 0.0,
-                :end => 100.0,
-                :width => 100.0
-            }
+                range = {
+                    :start => 0.0,
+                    :end => 100.0,
+                    :width => 100.0
+                }
+            end
 
             cf_range = {
                 :start => THRUST_MIN,

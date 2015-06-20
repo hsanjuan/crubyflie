@@ -44,13 +44,13 @@ puts cf.param.toc.to_s
 
 # Read some parameters
 puts "--------"
-cf.param.get_value("attitudepid.kp_pitch") do |value|
+cf.param.get_value("pid_attitude.pitch_kp") do |value|
     puts "kp_pitch: #{value}"
 end
-cf.param.get_value("attitudepid.ki_pitch") do |value|
+cf.param.get_value("pid_attitude.pitch_ki") do |value|
     puts "ki_pitch: #{value}"
 end
-cf.param.get_value("attitudepid.kd_pitch") do |value|
+cf.param.get_value("pid_attitude.pitch_kd") do |value|
     puts "kd_pitch: #{value}"
 end
 puts "--------"
