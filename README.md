@@ -1,5 +1,5 @@
-Crubyflie - A Ruby client for Crazyflie 1
-=========================================
+Crubyflie - A Ruby client for Crazyflie
+=======================================
 
 [![Gem Version](https://badge.fury.io/rb/crubyflie.svg)](http://badge.fury.io/rb/crubyflie) [![Build Status](https://travis-ci.org/hsanjuan/crubyflie.png?branch=master)](https://travis-ci.org/hsanjuan/crubyflie) [![Coverage Status](https://coveralls.io/repos/hsanjuan/crubyflie/badge.png)](https://coveralls.io/r/hsanjuan/crubyflie)
 
