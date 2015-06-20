@@ -49,7 +49,7 @@ The easiest way to do it is to `gem install crubyflie` and then run the `crubyfl
       --joystick-id, -j <i>:   Joystick ID (default: 0)
            --cf-uri, -f <s>:   Crazyflie URI (defaults to first one found in scan)
            --config, -c <s>:   Joystick configuration, defaults to default cfg in configs/ (default:
-                               /usr/lib64/ruby/gems/2.0.0/gems/crubyflie-0.0.1/lib/crubyflie/input/../../../configs/joystick_default.yaml)
+                               /usr/lib64/ruby/gems/2.1.0/gems/crubyflie-0.2.0/lib/crubyflie/input/../../../configs/joystick_default.yaml)
                  --help, -h:   Show this message
 
 There is a [template/default configuration file](https://github.com/hsanjuan/crubyflie/blob/master/configs/joystick_default.yaml) with instructions (which works for me and my PS3-like controller :) ). You should modify this file to fit it to your needs (configuration parameters are commented). The most tricky parameter in axis is the `:max_change_rate`. Depending on your controller, you will find the input is excessively throotled or not. I recommend that you play with this value.

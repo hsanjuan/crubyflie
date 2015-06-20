@@ -235,8 +235,7 @@ module Crubyflie
                 raise
             rescue Exception
                 retries ||= 0
-                logger.error("Unknown error scanning interface: #{$!}")
-                @crazyradio.reopen()
+                logger.error("Error scanning interface: #{$!}")
                 retries += 1
                 if retries < 2
                     logger.error("Retrying")
