@@ -38,6 +38,10 @@ opts = Trollop::options do
         :type => :string,
         :default => Crubyflie::Joystick::DEFAULT_CONFIG_PATH,
         :short => '-c')
+    opt(:packet_retries, "Number of retries when copter fails to ack a packet (-1 == forever)",
+        :type => :int,
+        :default => 100,
+        :short => '-r')
     opt(:debug, "Enable debug messages",
         :short => '-d')
 end
@@ -45,7 +49,11 @@ end
 include Crubyflie
 $debug = true if opts[:debug]
 
-cf = Crazyflie.new('/tmp/crubyflie')
+radio_opts = {}
+if r = opts[:packet_retries]
+    radio_opts[:retries_before_disconnect] = r
+end
+cf = Crazyflie.new('/tmp/crubyflie', radio_opts)
 
 # Before opening any link, scan for interfaces
 uris = cf.scan_interface
@@ -91,6 +99,6 @@ while cf.active? && !exit do
 end
 
 joystick.quit()
-cf.close_link()
+cf.close_link() if cf.active?
 warn "\n"
 logger.info("Bye bye!")

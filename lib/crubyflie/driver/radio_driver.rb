@@ -150,6 +150,10 @@ module Crubyflie
             @out_queue_max_size = opts[:out_queue_max_size] ||
                 OUT_QUEUE_MAX_SIZE
 
+            @retry_forever = @retries_before_disconnect < 0
+            m = "Radio driver will retry forever and never disconnect"
+            logger.warn(m) if @retry_forever
+
             # Initialize Crazyradio and run thread
             cradio_opts = {
                 :channel => channel,
@@ -180,9 +184,20 @@ module Crubyflie
         def send_packet(packet)
             return if !@crazyradio
             if (s = @out_queue.size) >= @out_queue_max_size
-                m = "Reached #{s} elements in outgoing queue"
-                @callbacks[:link_error_cb].call(m)
-                disconnect()
+                if @retry_forever
+                    m = "Outgoing queue full (#{s} elements) but retry_forever "
+                    m << "enabled: clearing queue"
+                    logger.warn(m)
+                    @out_queue.clear()
+                else
+                    m = "Reached maximum #{s} elements in outgoing queue"
+                    @callbacks[:link_error_cb].call(m)
+                    # Force shutdown, otherwise we will hit this error again
+                    # and go into stack overflow
+                    # (tecnnically, the link_error_cb should have made sure
+                    # we are disconnected, but it does not hurt to re-do it)
+                    disconnect(true)
+                end
             end
 
             @out_queue << packet if !@shutdown_thread
@@ -292,8 +307,14 @@ module Crubyflie
 
                     # Retry if we have not reached the limit
                     if !ack.ack
-                        retries -= 1
-                        next if retries > 0
+                        # If we have retries left, or we always want to retry
+                        if retries > 0 || @retry_forever
+                            retries -= 1 if !@retry_forever
+                            m = "No ack from copter: retries left #{retries}"
+                            logger.debug(m)
+                            next
+                        end
+                        # else just kill the thread
                         error = "Too many packets lost"
                         break
                     else
@@ -342,9 +363,11 @@ module Crubyflie
         def kill_radio_thread(force=false)
             if @radio_thread
                 if force
+                    logger.debug("Killing radio thread")
                     @radio_thread.kill()
                 else
                     @shutdown_thread = true
+                    logger.debug("Shutting down radio thread")
                     @radio_thread.join()
                 end
                 @radio_thread = nil

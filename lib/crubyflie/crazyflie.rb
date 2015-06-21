@@ -50,12 +50,12 @@ module Crubyflie
 
         attr_accessor :callbacks
         attr_reader :cache_folder, :commander, :console, :param, :log
-        attr_reader :crtp_queues, :link
+        attr_reader :crtp_queues, :link, :radio_opts
         # Initialize a Crazyflie by registering default received-packet
         # callbacks and intializing Queues for every facility.
         # Packets will be queued for each facility depending on their port
         # @param cache_folder [String] folder path to store logging TOC cache
-        def initialize(cache_folder=nil)
+        def initialize(cache_folder=nil, radio_opts={})
             @cache_folder = cache_folder
             # Callbacks will fire in some specific situations
             # Specially when receiving packages
@@ -83,6 +83,7 @@ module Crubyflie
             @log       = Log.new(self)
 
             @link = nil
+            @radio_opts = radio_opts
         end
 
 
@@ -97,7 +98,7 @@ module Crubyflie
                     :link_error_cb  => @callbacks[:link][:error]
                 }
 
-                @link.connect(uri, link_cbs)
+                @link.connect(uri, link_cbs, @radio_opts)
                 @callbacks[:received_packet][:connected] = Proc.new do |packet|
                     logger.info "Connected!"
                     @callbacks[:received_packet].delete(:connected)
@@ -115,8 +116,6 @@ module Crubyflie
         # Close the link and clean up
         # Attemps to disconnect from the crazyflie.
         def close_link
-            @commander.send_setpoint(0,0,0,0) if @link
-            sleep 0.05
             uri = @link ? @link.uri.to_s : "nowhere"
             @link.disconnect(force=true) if @link
             @link = nil
@@ -263,7 +262,6 @@ module Crubyflie
                 logger.error "Link error: #{m}"
                 close_link()
             end
-
         end
         private :register_default_callbacks
 
