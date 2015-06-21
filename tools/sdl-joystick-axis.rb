@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Copyright (C) 2013 Hector Sanjuan
+# Copyright (C) 2015 Hector Sanjuan
 
 # This file is part of Crubyflie.
 
