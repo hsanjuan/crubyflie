@@ -46,13 +46,14 @@ The easiest way to do it is to `gem install crubyflie` and then run the `crubyfl
 
     > crubyflie -h
     Options:
-      --joystick-id, -j <i>:   Joystick ID (default: 0)
-           --cf-uri, -f <s>:   Crazyflie URI (defaults to first one found in scan)
-           --config, -c <s>:   Joystick configuration, defaults to default cfg in configs/ (default:
-                               /usr/lib64/ruby/gems/2.1.0/gems/crubyflie-0.2.0/lib/crubyflie/input/../../../configs/joystick_default.yaml)
-                 --help, -h:   Show this message
+      -j, --joystick-id=<i>       Joystick ID (default: 0)
+      -f, --cf-uri=<s>            Crazyflie URI (defaults to first one found in scan)
+      -c, --config=<s>            Joystick configuration, defaults to default cfg in configs/ (default: /path/to/joystick_default.yaml)
+      -r, --packet-retries=<i>    Number of retries when copter fails to ack a packet (-1 == forever) (default: 100)
+      -d, --debug                 Enable debug messages
+      -h, --help                  Show this message
 
-There is a [template/default configuration file](https://github.com/hsanjuan/crubyflie/blob/master/configs/joystick_default.yaml) with instructions (which works for me and my PS3-like controller :) ). You should modify this file to fit it to your needs (configuration parameters are commented). The most tricky parameter in axis is the `:max_change_rate`. Depending on your controller, you will find the input is excessively throotled or not. I recommend that you play with this value.
+There is a [template/default configuration file](https://github.com/hsanjuan/crubyflie/blob/master/configs/joystick_default.yaml) with instructions (similar to PS3 standard assignments from the official app). You should modify this file to fit it to your needs (configuration parameters are well explained). The most tricky parameter in axis is the `:max_change_rate`. Depending on your controller, you will find the input is excessively throotled or not. I recommend that you play with this value.
 
 If you are wondering about your Joystick's axis IDs, ranges etc, you will find a `sdl-joystick-axis.rb` script under `tools` that lets you open a joystick and check what the SDL library can read from it. It might come handy.
 
