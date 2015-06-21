@@ -96,7 +96,6 @@ describe Crazyflie do
 
     describe "#close_link" do
         it "should close the link" do
-            expect(@facility).to receive(:send_setpoint)
             expect(@link).to receive(:disconnect)
             m1 = "Connection initiated to radio://0/0/1M"
             m2 = "Connection ready!"

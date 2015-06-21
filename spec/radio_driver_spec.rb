@@ -115,7 +115,7 @@ describe RadioDriver do
             expect(@radiodriver).to receive(:start_radio_thread)
             @radiodriver.connect(*@connect_params)
             max = @radiodriver.out_queue_max_size
-            m = "Reached #{max} elements in outgoing queue"
+            m = "Reached maximum #{max} elements in outgoing queue"
             # When it reaches 50 it disconnects and not send anymore
             expect(@link_error_cb).to receive(:call).with(m).once
             (1..52).each do
