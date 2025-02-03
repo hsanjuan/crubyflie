@@ -40,9 +40,9 @@ EOF
 
     spec.add_dependency "libusb"
     spec.add_dependency "rubysdl"
-    spec.add_dependency "trollop"
+    spec.add_dependency "optimist"
 
-    spec.add_development_dependency "bundler", "~> 1.3"
+    spec.add_development_dependency "bundler", "~> 2.6"
     spec.add_development_dependency "rake"
     spec.add_development_dependency "rspec"
     spec.add_development_dependency "yard"

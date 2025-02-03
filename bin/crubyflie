@@ -20,13 +20,13 @@
 $: << File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'crubyflie'
-require 'trollop'
+require 'optimist'
 
 # This script allows to fly the Crazyflie usingi the Joystick controller
 # and initializing a Crazyflie. It might need a bit of cleanup but it does
 # the job.
 
-opts = Trollop::options do
+opts = Optimist::options do
     opt(:joystick_id, "Joystick ID",
         :type => :int,
         :default => 0,

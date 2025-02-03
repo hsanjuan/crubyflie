@@ -175,16 +175,14 @@ module Crubyflie
         # Send a data packet and reads the response into an Ack
         # @param [Array] data to be sent
         def send_packet(data)
-            out_args = {
-                :endpoint => 1,
-                :dataOut => data.pack('C*')
-            }
-            @handle.bulk_transfer(out_args)
-            in_args = {
-                :endpoint => 0x81,
-                :dataIn => 64
-            }
-            response = @handle.bulk_transfer(in_args)
+            @handle.bulk_transfer(
+              :endpoint => 1,
+              :dataOut => data.pack('C*')
+            )
+            response = @handle.bulk_transfer(
+              :endpoint => 0x81,
+              :dataIn => 64
+            )
 
             return nil unless response
             return RadioAck.from_raw(response, @settings[:arc])
@@ -235,27 +233,25 @@ module Crubyflie
         end
 
         def send_vendor_setup(request, value, index=0, dataOut=[])
-            args = {
-                :bmRequestType        => LIBUSB::REQUEST_TYPE_VENDOR,
-                :bRequest             => request,
-                :wValue               => value,
-                :wIndex               => index,
-                :dataOut              => dataOut.pack('C*')
-            }
-            @handle.control_transfer(args)
+            @handle.control_transfer(
+              :bmRequestType        => LIBUSB::REQUEST_TYPE_VENDOR,
+              :bRequest             => request,
+              :wValue               => value,
+              :wIndex               => index,
+              :dataOut              => dataOut.pack('C*')
+            )
         end
         private :send_vendor_setup
 
         def get_vendor_setup(request, value, index, dataIn=0)
-            args = {
-                # Why this mask?
-                :bmRequestType        => LIBUSB::REQUEST_TYPE_VENDOR | 0x80,
-                :bRequest             => request,
-                :wValue               => value,
-                :wIndex               => index,
-                :dataIn               => dataIn
-            }
-            return @handle.control_transfer(args).unpack('C*')
+            return @handle.control_transfer(
+                     # Why this mask?
+                     :bmRequestType        => LIBUSB::REQUEST_TYPE_VENDOR | 0x80,
+                     :bRequest             => request,
+                     :wValue               => value,
+                     :wIndex               => index,
+                     :dataIn               => dataIn
+                   ).unpack('C*')
         end
         private :get_vendor_setup
 

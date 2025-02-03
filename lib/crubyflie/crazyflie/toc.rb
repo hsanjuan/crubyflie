@@ -189,7 +189,7 @@ module Crubyflie
                 request_toc_element(crazyflie, requested_item, port)
 
                 begin
-                    response = timeout(wait, WaitTimeoutException) do
+                    response = Timeout.timeout(wait, WaitTimeoutException) do
                         response = in_queue.pop() # block here
                     end
                 rescue

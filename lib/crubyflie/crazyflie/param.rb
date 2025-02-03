@@ -206,7 +206,7 @@ module Crubyflie
         def wait_for_response
             begin
                 wait = WAIT_PACKET_TIMEOUT
-                response = timeout(wait, WaitTimeoutException) do
+                response = Timeout.timeout(wait, WaitTimeoutException) do
                     @in_queue.pop()
                 end
                 return response
